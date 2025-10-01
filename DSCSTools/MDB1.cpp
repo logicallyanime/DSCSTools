@@ -429,6 +429,10 @@ namespace dscstools {
 				nodes.push_back(child);
 			}
 
+			for(const auto& val : nodes) {
+				std::cout << val.name << "\n";
+			}
+
 			return nodes;
 		}
 
