@@ -38,7 +38,7 @@ namespace
 
         CSVFile(std::filesystem::path path)
         {
-            std::ifstream stream(path);
+            std::ifstream stream(path, std::ios::in);
             aria::csv::CsvParser parser(stream);
 
             for (const auto& row : parser)
@@ -55,7 +55,8 @@ namespace
         }
     };
 
-    constexpr EntryType convertEntryType(std::string val)
+    // TODO clean up
+    inline EntryType convertEntryType(std::string val)
     {
         std::map<std::string, EntryType> map;
         map["byte"]      = EntryType::INT8;
@@ -555,7 +556,7 @@ namespace dscstools::expa
         for (const auto& table : file.tables)
         {
             auto path = target / std::format("{:03}_{}.csv", table_id++, table.name);
-            std::ofstream stream(path);
+            std::ofstream stream(path, std::ios::out);
 
             if (!stream) return std::unexpected("Failed to write target file.");
 
