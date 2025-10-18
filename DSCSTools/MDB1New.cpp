@@ -1,7 +1,7 @@
 
 #include "MDB1new.h"
 
-
+#include <deque>
 #include <filesystem>
 
 namespace
@@ -10,7 +10,6 @@ namespace
 
 namespace dscstools::mdb1new::detail
 {
-
     inline TreeNode findFirstBitMismatch(const uint16_t first,
                                          const std::vector<TreeName>& nodeless,
                                          const std::vector<TreeName>& withNode)
@@ -63,8 +62,7 @@ namespace dscstools::mdb1new::detail
         return std::string(name);
     }
 
-    std::vector<TreeNode> generateTree(const std::vector<std::filesystem::path> paths,
-                                              std::filesystem::path source)
+    std::vector<TreeNode> generateTree(const std::vector<std::filesystem::path> paths, std::filesystem::path source)
     {
         std::vector<TreeName> fileNames;
         std::ranges::transform(paths,
@@ -149,5 +147,4 @@ namespace dscstools::mdb1new::detail
 
         return nodes;
     }
-
 } // namespace dscstools::mdb1new::detail

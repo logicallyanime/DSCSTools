@@ -8,7 +8,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -19,13 +18,6 @@
 
 namespace dscstools::mdb1new
 {
-    template<typename T>
-    concept Compressor = requires(const std::vector<char>& input, size_t size) {
-        { T::decompress(input, size) } -> std::same_as<std::expected<std::vector<char>, std::string>>;
-        { T::compress(input) } -> std::same_as<std::expected<std::vector<char>, std::string>>;
-        { T::isCompressed(input) } -> std::same_as<bool>;
-    };
-
     template<typename T>
     concept ArchiveType = requires {
         typename T::InputStream;
@@ -38,6 +30,13 @@ namespace dscstools::mdb1new
     } && Compressor<typename T::Compressor>;
 
     constexpr uint32_t MDB1_MAGIC_VALUE = 0x3142444d;
+
+    enum class CompressMode
+    {
+        NONE,
+        NORMAL,
+        ADVANCED
+    };
 
     struct MDB1Header32
     {
@@ -285,8 +284,7 @@ namespace dscstools::mdb1new::detail
 
     constexpr uint64_t INVALID = std::numeric_limits<uint64_t>::max();
 
-    std::vector<TreeNode> generateTree(const std::vector<std::filesystem::path> paths,
-                                              std::filesystem::path source);
+    std::vector<TreeNode> generateTree(const std::vector<std::filesystem::path> paths, std::filesystem::path source);
 
     template<Compressor Compress>
     std::expected<CompressionResult, std::string> getFileData(std::filesystem::path file, CompressMode mode)

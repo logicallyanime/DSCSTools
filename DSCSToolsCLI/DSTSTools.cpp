@@ -1,5 +1,4 @@
 #include "AFS2.h"
-#include "Compressors.h"
 #include "EXPAnew.h"
 #include "MDB1new.h"
 #include "SaveFile.h"
@@ -251,7 +250,7 @@ namespace
     template<GameModules T>
     struct GameCLI
     {
-        static void packMVGL(std::filesystem::path source, std::filesystem::path target, CompressMode compress)
+        static void packMVGL(std::filesystem::path source, std::filesystem::path target, mdb1new::CompressMode compress)
         {
             auto result = dscstools::mdb1new::packArchive<typename T::MDB1Module>(source, target, compress);
             if (!result) std::cout << result.error() << "\n";
@@ -374,7 +373,7 @@ namespace
             {
                 case Mode::PACK_MVGL:
                 {
-                    CompressMode compress = vm["compress"].as<CompressMode>();
+                    mdb1new::CompressMode compress = vm["compress"].as<mdb1new::CompressMode>();
                     packMVGL(source, target, compress);
                     break;
                 }
@@ -485,12 +484,12 @@ namespace
         return map;
     }
 
-    std::map<std::string, CompressMode> getCompressionMap()
+    std::map<std::string, mdb1new::CompressMode> getCompressionMap()
     {
-        std::map<std::string, CompressMode> map;
-        map["normal"]   = CompressMode::NORMAL;
-        map["none"]     = CompressMode::NONE;
-        map["advanced"] = CompressMode::ADVANCED;
+        std::map<std::string, mdb1new::CompressMode> map;
+        map["normal"]   = mdb1new::CompressMode::NORMAL;
+        map["none"]     = mdb1new::CompressMode::NONE;
+        map["advanced"] = mdb1new::CompressMode::ADVANCED;
         return map;
     }
 
@@ -524,7 +523,7 @@ namespace
 
 } // namespace
 
-namespace dscstools
+namespace dscstools::mdb1new
 {
     void validate(boost::any& value, const std::vector<std::string>& values, CompressMode* target_type, int)
     {
@@ -574,7 +573,7 @@ int main(int argc, char** argv)
         120);
     auto pack_options = pack_desc.add_options();
     pack_options("compress",
-                 po::value<CompressMode>()->default_value(CompressMode::NORMAL, "normal"),
+                 po::value<mdb1new::CompressMode>()->default_value(mdb1new::CompressMode::NORMAL, "normal"),
                  "normal   -> use regular compression, as in vanilla files\n"
                  "none     -> use no compression\n"
                  "advanced -> improve compression by deduplicating, slower");

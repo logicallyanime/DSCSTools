@@ -9,6 +9,7 @@ target_sources(DSCSTools
 	AFS2.cpp
 	MDB1New.cpp
 	EXPANew.cpp
+	Compressors.cpp
 )
 
 target_include_directories(DSCSTools 
