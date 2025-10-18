@@ -1,9 +1,9 @@
 
 #include "Compressors.h"
 
-#include "../../libs/doboz/Compressor.h"
-#include "../../libs/doboz/Decompressor.h"
-#include "../../libs/lz4/lz4hc.h"
+#include <Compressor.h>
+#include <Decompressor.h>
+#include <lz4hc.h>
 
 #include <format>
 #include <utility>

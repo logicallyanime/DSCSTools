@@ -1,11 +1,10 @@
 #include "EXPA.h"
 
-#include "../libs/csv-parser/parser.hpp"
-
 #include "Helpers.h"
-#include "boost/property_tree/json_parser.hpp"
 
+#include <boost/property_tree/json_parser.hpp>
 #include <boost/regex.hpp>
+#include <parser.hpp>
 
 #include <algorithm>
 #include <bitset>

@@ -1,32 +1,33 @@
-﻿cmake_minimum_required (VERSION 3.28)
+﻿cmake_minimum_required(VERSION 3.28)
 
-project ("DSCSTools" 
-            VERSION 2.0.0 
-            DESCRIPTION "Tools for Digimon Story Cyber Sleuth"
-            HOMEPAGE_URL "https://github.com/SydMontague/DSCSTools")
+project("DSCSTools"
+  VERSION 2.0.0
+  DESCRIPTION "Tools for Digimon Story Cyber Sleuth"
+  HOMEPAGE_URL "https://github.com/SydMontague/DSCSTools")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_SCAN_FOR_MODULES OFF)
 
 include(cmake/CPM.cmake)
 
-if (MSVC)
-	add_definitions("-D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0A00") # Windows 10
-else()
-#	set(CMAKE_CXX_FLAGS -pthread)
+if(MSVC)
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0A00") # Windows 10
 endif()
 
 option(BUILD_SHARED_LIBS "Build Using Shared Libs" OFF)
+option(BUILD_CLI_APP "Build CLI Application" ON)
 
 # --- Libraries ---
 # doboz
 add_subdirectory("libs/doboz")
 # lz4
 add_subdirectory("libs/lz4")
+# csv-parser
+add_subdirectory("libs/csv-parser")
 
 # boost
 if(WIN32)
-    set(Boost_USE_STATIC_LIBS ON) 
+  set(Boost_USE_STATIC_LIBS ON)
 endif()
 
 CPMAddPackage(
@@ -37,7 +38,5 @@ CPMAddPackage(
 )
 
 # Include sub-projects.
-add_subdirectory ("DSCSTools")
-add_subdirectory ("DSCSToolsCLI")
-
-install (FILES LICENSE THIRD-PARTY-NOTICE DESTINATION ${CMAKE_BINARY_DIR}/target/license)
+add_subdirectory("DSCSTools")
+add_subdirectory("DSCSToolsCLI")

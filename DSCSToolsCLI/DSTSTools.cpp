@@ -1,13 +1,13 @@
 #include "AFS2.h"
 #include "EXPA.h"
+#include "Helpers.h"
 #include "MDB1.h"
 #include "SaveFile.h"
-#include "boost/program_options/options_description.hpp"
-#include "boost/program_options/variables_map.hpp"
 
-#include <Helpers.h>
 #include <boost/program_options.hpp>
 #include <boost/program_options/errors.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 #include <cctype>
 #include <exception>
@@ -478,7 +478,7 @@ namespace
         map["time-stranger"] = GameMode::DSTS;
 
         map["hundred-line"] = GameMode::THL;
-        map["thl"]        = GameMode::THL;
+        map["thl"]          = GameMode::THL;
         map["hl"]           = GameMode::THL;
         return map;
     }
@@ -529,7 +529,7 @@ namespace dscstools::mdb1
         static std::map<std::string, CompressMode> map = getCompressionMap();
         validate_helper(value, values, map);
     }
-} // namespace dscstools
+} // namespace dscstools::mdb1
 
 int main(int argc, char** argv)
 {
