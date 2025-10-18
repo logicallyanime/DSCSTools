@@ -9,37 +9,15 @@
 
 namespace dscstools::expa
 {
-    // forward declarations
-    struct FinalFile;
-    struct Structure;
-
-    template<typename T>
-    concept EXPA = requires(std::ifstream& stream, std::filesystem::path filePath, std::string tableName) {
-        { T::ALIGN_STEP } -> std::convertible_to<size_t>;
-        { T::HAS_STRUCTURE_SECTION } -> std::convertible_to<bool>;
-        { T::getStructure(stream, filePath, tableName) } -> std::same_as<Structure>;
-    };
-
-    template<EXPA expa>
-    std::expected<void, std::string> writeEXPA(const FinalFile& file, std::filesystem::path path);
-
-    template<EXPA expa>
-    std::expected<FinalFile, std::string> readEXPA(std::filesystem::path path);
-
-    std::expected<void, std::string> exportCSV(const FinalFile& file, std::filesystem::path target);
-
-    std::expected<FinalFile, std::string> importCSV(std::filesystem::path source);
-} // namespace dscstools::expa
-
-// implementation
-namespace dscstools::expa
-{
-    constexpr auto EXPA_MAGIC = 0x41505845;
-    constexpr auto CHNK_MAGIC = 0x4B4E4843;
-
+    /**
+     * Represents the value of an EXPA entry.
+     */
     using EntryValue =
         std::variant<bool, int8_t, int16_t, int32_t, float, std::string, std::vector<int32_t>, std::nullopt_t>;
 
+    /**
+     * Represents the available Entry types for EXPA tables
+     */
     enum class EntryType : uint32_t
     {
         INT_ARRAY = 0,
@@ -55,6 +33,187 @@ namespace dscstools::expa
         EMPTY     = 10,
     };
 
+    /**
+     * Represents a CHNKEntry for an EXPA file.
+     */
+    struct CHNKEntry
+    {
+        uint32_t offset;
+        std::vector<char> value;
+
+        CHNKEntry(uint32_t offset, const std::string& data);
+        CHNKEntry(uint32_t offset, const std::vector<int32_t>& data);
+    };
+
+    /**
+     * Represents an entry in an EXPA table, containing the binary representation of the data as well as any potentially
+     * associated CHNKEntries
+     */
+    struct EXPAEntry
+    {
+        std::vector<char> data;
+        std::vector<CHNKEntry> chunk;
+    };
+
+    /**
+     * Represents an entry in a structure, consisting of name and type
+     */
+    struct StructureEntry
+    {
+        std::string name;
+        EntryType type;
+    };
+
+    /**
+     * Represents the structure of a data table.
+     */
+    class Structure
+    {
+    private:
+        std::vector<StructureEntry> structure;
+
+    public:
+        Structure(std::vector<StructureEntry> structure);
+
+        /**
+         * Get the structure entries.
+         */
+        const std::vector<StructureEntry> getStructure() const;
+
+        /**
+         * Returns the number of entries the structure has.
+         */
+        size_t getEntryCount() const;
+
+        /**
+         * Convert a vector of entry values, representing a row of this structure, into an EXPAEntry.
+         */
+        EXPAEntry writeEXPA(const std::vector<EntryValue>& entries) const;
+
+        /**
+         * Read a row of entry values from a raw buffer. The caller must make sure there is enough data to read.
+         */
+        std::vector<EntryValue> readEXPA(const char* data) const;
+
+        /**
+         * Gets the size of an entry of this structure when written in the EXPA format.
+         */
+        uint32_t getEXPASize() const;
+
+        /**
+         * Get the CSV header row of this structure.
+         */
+        std::string getCSVHeader() const;
+
+        /**
+         * Convert a vector of entry values, representing a row of this structure, into a CSV compatible string.
+         */
+        std::string writeCSV(const std::vector<EntryValue>& entries) const;
+
+        /**
+         * Convert a vector of strings into a vector of entry values, representing a row of this structure.
+         */
+        std::vector<EntryValue> readCSV(const std::vector<std::string>& data) const;
+    };
+
+    /**
+     * Represents a structured data table, which contains a set of entries.
+     */
+    struct Table
+    {
+        std::string name;
+        Structure structure;
+        std::vector<std::vector<EntryValue>> entries;
+    };
+
+    /**
+     * Represents a file of multiple tables.
+     */
+    struct TableFile
+    {
+        std::vector<Table> tables;
+    };
+
+    /**
+     * Represents an EXPA implementation, detailing all the static functions and data needed to use this module.
+     */
+    template<typename T>
+    concept EXPA = requires(std::ifstream& stream, std::filesystem::path filePath, std::string tableName) {
+        /**
+         * The alignment size of the EXPA.
+         */
+        { T::ALIGN_STEP } -> std::convertible_to<size_t>;
+        /**
+         * Whether the EXPA contains a structure section.
+         */
+        { T::HAS_STRUCTURE_SECTION } -> std::convertible_to<bool>;
+        /**
+         * Read the structure from the stream and lookup the structure file and return it or an empty structure if
+         * nothing was found.
+         */
+        { T::getStructure(stream, filePath, tableName) } -> std::same_as<Structure>;
+    };
+
+    // See EXPA concept for details
+    struct EXPA32
+    {
+        static constexpr auto ALIGN_STEP            = 4;
+        static constexpr auto HAS_STRUCTURE_SECTION = false;
+
+        static Structure getStructure(std::ifstream& stream, std::filesystem::path filePath, std::string tableName);
+    };
+
+    // See EXPA concept for details
+    struct EXPA64
+    {
+        static constexpr auto ALIGN_STEP            = 8;
+        static constexpr auto HAS_STRUCTURE_SECTION = true;
+
+        static Structure getStructure(std::ifstream& stream, std::filesystem::path filePath, std::string tableName);
+    };
+
+    /**
+     * Write a table file as EXPA into the given path
+     *
+     * @param file the table file to write
+     * @param path the path to write to
+     * @return void if successful, an error string otherwise
+     */
+    template<EXPA expa>
+    std::expected<void, std::string> writeEXPA(const TableFile& file, std::filesystem::path path);
+
+    /**
+     * Reads an EXPA file into a table file.
+     *
+     * @param path the path to read from
+     * @return the table file if successful, an error string otherwise
+     */
+    template<EXPA expa>
+    std::expected<TableFile, std::string> readEXPA(std::filesystem::path path);
+
+    /**
+     * Write a table file as CSV into the given path
+     *
+     * @param file the table file to write
+     * @param path the path to write to
+     * @return void if successful, an error string otherwise
+     */
+    std::expected<void, std::string> exportCSV(const TableFile& file, std::filesystem::path target);
+
+    /**
+     * Reads an CSV folder into a table file.
+     *
+     * @param path the path to read from
+     * @return the table file if successful, an error string otherwise
+     */
+    std::expected<TableFile, std::string> importCSV(std::filesystem::path source);
+} // namespace dscstools::expa
+
+namespace dscstools::expa::detail
+{
+    constexpr auto EXPA_MAGIC = 0x41505845;
+    constexpr auto CHNK_MAGIC = 0x4B4E4843;
+
     struct EXPAHeader
     {
         uint32_t magic{EXPA_MAGIC};
@@ -66,75 +225,15 @@ namespace dscstools::expa
         uint32_t magic{CHNK_MAGIC};
         uint32_t numEntry{0};
     };
+} // namespace dscstools::expa::detail
 
-    struct CHNKEntry
-    {
-        uint32_t offset;
-        std::vector<char> value;
-
-        CHNKEntry(uint32_t offset, const std::string& data);
-        CHNKEntry(uint32_t offset, const std::vector<int32_t>& data);
-    };
-
-    struct EXPAEntry
-    {
-        std::vector<char> data;
-        std::vector<CHNKEntry> chunk;
-    };
-
-    struct StructureEntry
-    {
-        std::string name;
-        EntryType type;
-    };
-
-    struct Structure
-    {
-        std::vector<StructureEntry> structure;
-
-        EXPAEntry writeEXPA(const std::vector<EntryValue>& entries) const;
-
-        std::vector<EntryValue> readEXPA(const char* data) const;
-
-        std::string getCSVHeader() const;
-        std::string writeCSV(const std::vector<EntryValue>& entries) const;
-        std::vector<EntryValue> readCSV(const std::vector<std::string>& data) const;
-
-        uint32_t getEXPASize() const;
-
-        size_t getEntryCount() const;
-    };
-
-    struct FinalTable
-    {
-        std::string name;
-        Structure structure;
-        std::vector<std::vector<EntryValue>> entries;
-    };
-
-    struct FinalFile
-    {
-        std::vector<FinalTable> tables;
-    };
-
-    struct EXPA32
-    {
-        static constexpr auto ALIGN_STEP            = 4;
-        static constexpr auto HAS_STRUCTURE_SECTION = false;
-
-        static Structure getStructure(std::ifstream& stream, std::filesystem::path filePath, std::string tableName);
-    };
-
-    struct EXPA64
-    {
-        static constexpr auto ALIGN_STEP            = 8;
-        static constexpr auto HAS_STRUCTURE_SECTION = true;
-
-        static Structure getStructure(std::ifstream& stream, std::filesystem::path filePath, std::string tableName);
-    };
+// implementation
+namespace dscstools::expa
+{
+    using namespace detail;
 
     template<EXPA expa>
-    std::expected<void, std::string> writeEXPA(const FinalFile& file, std::filesystem::path path)
+    std::expected<void, std::string> writeEXPA(const TableFile& file, std::filesystem::path path)
     {
         if (std::filesystem::exists(path) && !std::filesystem::is_regular_file(path))
             return std::unexpected("Target path already exists and is not a file.");
@@ -161,7 +260,7 @@ namespace dscstools::expa
             if constexpr (expa::HAS_STRUCTURE_SECTION)
             {
                 write(stream, static_cast<uint32_t>(structure.getEntryCount()));
-                for (const auto& entry : structure.structure)
+                for (const auto& entry : structure.getStructure())
                     write(stream, entry.type);
             }
 
@@ -199,7 +298,7 @@ namespace dscstools::expa
     }
 
     template<EXPA expa>
-    std::expected<FinalFile, std::string> readEXPA(std::filesystem::path path)
+    std::expected<TableFile, std::string> readEXPA(std::filesystem::path path)
     {
         struct TableEntry
         {
@@ -265,7 +364,7 @@ namespace dscstools::expa
             stream.seekg(size, std::ios::cur);
         }
 
-        std::vector<FinalTable> finalTable;
+        std::vector<Table> finalTable;
         for (const auto& table : tables)
         {
             const auto increase = ceilInteger<8>(table.entrySize);
@@ -281,6 +380,6 @@ namespace dscstools::expa
             finalTable.emplace_back(table.name, table.structure, values);
         }
 
-        return FinalFile{finalTable};
+        return TableFile{finalTable};
     }
 } // namespace dscstools::expa

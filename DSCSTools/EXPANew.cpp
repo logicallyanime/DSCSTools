@@ -325,53 +325,15 @@ namespace
 
 namespace dscstools::expa
 {
-
-    void bla()
+    Structure::Structure(std::vector<StructureEntry> structure)
+        : structure(structure)
     {
-        constexpr auto path1 =
-            "/home/syd/Development/MyRepos/DSCSTools/build/DSCSToolsCLI/DSTS/data/field_npc_t0303.mbe";
-        constexpr auto path2 =
-            "/home/syd/Development/MyRepos/DSCSTools/build/DSCSToolsCLI/DSDBP/data/digimon_common_para.mbe";
-
-        // std::filesystem::recursive_directory_iterator itr(
-        //     "/home/syd/Development/MyRepos/DSCSTools/build/DSCSToolsCLI/DSDB/data/");
-        std::filesystem::recursive_directory_iterator itr(
-            "/home/syd/Development/MyRepos/DSCSTools/build/DSCSToolsCLI/DSDB/data/");
-        for (const auto& file : itr)
-        {
-            if (!std::filesystem::is_regular_file(file)) continue;
-
-            std::cout << "Extract " << file.path().filename() << "\n";
-
-            auto result = readEXPA<EXPA32>(file);
-            if (result)
-            {
-                std::ignore = exportCSV(result.value(), std::format("mbe32/{}/", file.path().filename().string()));
-            }
-            else
-                std::cout << result.error() << "\n";
-        }
-
-        std::filesystem::directory_iterator itr2("mbe32/");
-        for (const auto& file : itr2)
-        {
-            std::cout << "Rebuild " << file.path().filename() << "\n";
-
-            auto result = importCSV(file);
-            if (result) { std::ignore = writeEXPA<EXPA32>(result.value(), "expa32/" / file.path().filename()); }
-            else
-                std::cout << result.error() << "\n";
-        }
-
-        // auto result = readEXPA<EXPA64>(path1);
-
-        // writeEXPA<EXPA64>(result.value(), "expa64.mbe");
-        //  std::cout << result.error_or("Success") << "\n";
-        //  result = readEXPA<EXPA32>(path2);
-        //  writeEXPA<EXPA32>(result.value(), "expa32.mbe");
-        //  std::cout << result.error_or("Success") << "\n";
     }
 
+    const std::vector<StructureEntry> Structure::getStructure() const
+    {
+        return structure;
+    }
     EXPAEntry Structure::writeEXPA(const std::vector<EntryValue>& entries) const
     {
         auto offset     = 0;
@@ -538,7 +500,7 @@ namespace dscstools::expa
         return {fromFile};
     }
 
-    std::expected<void, std::string> exportCSV(const FinalFile& file, std::filesystem::path target)
+    std::expected<void, std::string> exportCSV(const TableFile& file, std::filesystem::path target)
     {
         if (std::filesystem::exists(target) && !std::filesystem::is_directory(target))
             return std::unexpected("Target path exists and is not a directory.");
@@ -560,7 +522,7 @@ namespace dscstools::expa
         return {};
     }
 
-    std::expected<FinalFile, std::string> importCSV(std::filesystem::path source)
+    std::expected<TableFile, std::string> importCSV(std::filesystem::path source)
     {
         if (!std::filesystem::exists(source) || !std::filesystem::is_directory(source))
             return std::unexpected("Source path doesn't exist or is not a directory.");
@@ -571,7 +533,7 @@ namespace dscstools::expa
             if (val.is_regular_file()) files.push_back(val);
         std::ranges::sort(files);
 
-        std::vector<FinalTable> tables;
+        std::vector<Table> tables;
 
         for (auto file : files)
         {
@@ -585,6 +547,6 @@ namespace dscstools::expa
             tables.emplace_back(name, structure, entries);
         }
 
-        return FinalFile{tables};
+        return TableFile{tables};
     }
 } // namespace dscstools::expa
