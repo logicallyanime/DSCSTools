@@ -16,7 +16,7 @@
 #include <ranges>
 #include <string>
 
-namespace dscstools::mdb1new
+namespace dscstools::mdb1
 {
     /**
      * Represents an MDB1 implementation, detailing the using declarations it has to do.
@@ -98,10 +98,10 @@ namespace dscstools::mdb1new
     std::expected<void, std::string>
     packArchive(std::filesystem::path source, std::filesystem::path target, CompressMode compress);
 
-} // namespace dscstools::mdb1new
+} // namespace dscstools::mdb1
 
 /* Implementation */
-namespace dscstools::mdb1new::detail
+namespace dscstools::mdb1::detail
 {
     constexpr uint32_t MDB1_MAGIC_VALUE = 0x3142444d;
 
@@ -284,10 +284,10 @@ namespace dscstools::mdb1new::detail
             .data         = compressed,
         };
     }
-} // namespace dscstools::mdb1new::detail
+} // namespace dscstools::mdb1::detail
 
 // implementation
-namespace dscstools::mdb1new
+namespace dscstools::mdb1
 {
     using namespace detail;
 
@@ -569,4 +569,4 @@ namespace dscstools::mdb1new
         output.write(reinterpret_cast<char*>(dataEntries.data()), dataEntries.size() * sizeof(typename MDB::DataEntry));
         return {};
     }
-} // namespace dscstools::mdb1new
+} // namespace dscstools::mdb1

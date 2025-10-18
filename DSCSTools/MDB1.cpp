@@ -1,5 +1,5 @@
 
-#include "MDB1new.h"
+#include "MDB1.h"
 
 #include <deque>
 #include <filesystem>
@@ -8,7 +8,7 @@ namespace
 {
 } // namespace
 
-namespace dscstools::mdb1new::detail
+namespace dscstools::mdb1::detail
 {
     inline TreeNode findFirstBitMismatch(const uint16_t first,
                                          const std::vector<TreeName>& nodeless,
@@ -147,4 +147,4 @@ namespace dscstools::mdb1new::detail
 
         return nodes;
     }
-} // namespace dscstools::mdb1new::detail
+} // namespace dscstools::mdb1::detail

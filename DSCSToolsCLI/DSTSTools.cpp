@@ -1,6 +1,6 @@
 #include "AFS2.h"
-#include "EXPAnew.h"
-#include "MDB1new.h"
+#include "EXPA.h"
+#include "MDB1.h"
 #include "SaveFile.h"
 #include "boost/program_options/options_description.hpp"
 #include "boost/program_options/variables_map.hpp"
@@ -78,7 +78,7 @@ namespace
             typename T::CryptModule;
             typename T::SaveCryptModule;
             typename T::AFS2Module;
-        } && mdb1new::ArchiveType<typename T::MDB1Module> && expa::EXPA<typename T::EXPAModule> &&
+        } && mdb1::ArchiveType<typename T::MDB1Module> && expa::EXPA<typename T::EXPAModule> &&
         FileCryptModule<typename T::CryptModule> && SaveCryptModule<typename T::SaveCryptModule> &&
         AFS2Module<typename T::AFS2Module>;
 
@@ -188,8 +188,8 @@ namespace
                 return std::unexpected("Output path exists and is not a file.");
             if (file_equivalent(source, target)) return std::unexpected("Input and output file must be different.");
 
-            mdb1new::DSCS::InputStream input(source, std::ios::binary | std::ios::in);
-            mdb1new::DSCS::OutputStream output(target, std::ios::binary | std::ios::out);
+            mdb1::DSCS::InputStream input(source, std::ios::binary | std::ios::in);
+            mdb1::DSCS::OutputStream output(target, std::ios::binary | std::ios::out);
 
             std::streamsize offset = 0;
             std::array<char, 0x2000> inArr;
@@ -213,7 +213,7 @@ namespace
 
     struct DSTSModule
     {
-        using MDB1Module      = dscstools::mdb1new::DSTS;
+        using MDB1Module      = dscstools::mdb1::DSTS;
         using EXPAModule      = dscstools::expa::EXPA64;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
@@ -222,7 +222,7 @@ namespace
 
     struct THLModule
     {
-        using MDB1Module      = dscstools::mdb1new::THL;
+        using MDB1Module      = dscstools::mdb1::THL;
         using EXPAModule      = dscstools::expa::EXPA64;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
@@ -231,7 +231,7 @@ namespace
 
     struct DSCSModule
     {
-        using MDB1Module      = dscstools::mdb1new::DSCS;
+        using MDB1Module      = dscstools::mdb1::DSCS;
         using EXPAModule      = dscstools::expa::EXPA32;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
@@ -240,7 +240,7 @@ namespace
 
     struct DSCSConsoleModule
     {
-        using MDB1Module      = dscstools::mdb1new::DSCSNoCrypt;
+        using MDB1Module      = dscstools::mdb1::DSCSNoCrypt;
         using EXPAModule      = dscstools::expa::EXPA32;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
@@ -250,20 +250,20 @@ namespace
     template<GameModules T>
     struct GameCLI
     {
-        static void packMVGL(std::filesystem::path source, std::filesystem::path target, mdb1new::CompressMode compress)
+        static void packMVGL(std::filesystem::path source, std::filesystem::path target, mdb1::CompressMode compress)
         {
-            auto result = dscstools::mdb1new::packArchive<typename T::MDB1Module>(source, target, compress);
+            auto result = dscstools::mdb1::packArchive<typename T::MDB1Module>(source, target, compress);
             if (!result) std::cout << result.error() << "\n";
         }
         static void unpackMVGL(std::filesystem::path source, std::filesystem::path target)
         {
-            dscstools::mdb1new::ArchiveInfo<typename T::MDB1Module> archive(source);
+            dscstools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
             auto result = archive.extract(target);
             if (!result) std::cout << result.error() << "\n";
         }
         static void unpackMVGLFile(std::filesystem::path source, std::filesystem::path target, std::string file)
         {
-            dscstools::mdb1new::ArchiveInfo<typename T::MDB1Module> archive(source);
+            dscstools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
             auto result = archive.extractSingleFile(target, file);
             if (!result) std::cout << result.error() << "\n";
         }
@@ -373,7 +373,7 @@ namespace
             {
                 case Mode::PACK_MVGL:
                 {
-                    mdb1new::CompressMode compress = vm["compress"].as<mdb1new::CompressMode>();
+                    mdb1::CompressMode compress = vm["compress"].as<mdb1::CompressMode>();
                     packMVGL(source, target, compress);
                     break;
                 }
@@ -483,12 +483,12 @@ namespace
         return map;
     }
 
-    std::map<std::string, mdb1new::CompressMode> getCompressionMap()
+    std::map<std::string, mdb1::CompressMode> getCompressionMap()
     {
-        std::map<std::string, mdb1new::CompressMode> map;
-        map["normal"]   = mdb1new::CompressMode::NORMAL;
-        map["none"]     = mdb1new::CompressMode::NONE;
-        map["advanced"] = mdb1new::CompressMode::ADVANCED;
+        std::map<std::string, mdb1::CompressMode> map;
+        map["normal"]   = mdb1::CompressMode::NORMAL;
+        map["none"]     = mdb1::CompressMode::NONE;
+        map["advanced"] = mdb1::CompressMode::ADVANCED;
         return map;
     }
 
@@ -522,7 +522,7 @@ namespace
 
 } // namespace
 
-namespace dscstools::mdb1new
+namespace dscstools::mdb1
 {
     void validate(boost::any& value, const std::vector<std::string>& values, CompressMode* target_type, int)
     {
@@ -572,7 +572,7 @@ int main(int argc, char** argv)
         120);
     auto pack_options = pack_desc.add_options();
     pack_options("compress",
-                 po::value<mdb1new::CompressMode>()->default_value(mdb1new::CompressMode::NORMAL, "normal"),
+                 po::value<mdb1::CompressMode>()->default_value(mdb1::CompressMode::NORMAL, "normal"),
                  "normal   -> use regular compression, as in vanilla files\n"
                  "none     -> use no compression\n"
                  "advanced -> improve compression by deduplicating, slower");

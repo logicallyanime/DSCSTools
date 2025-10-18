@@ -5,8 +5,8 @@ target_sources(DSCSTools
 	PRIVATE
 	SaveFile.cpp
 	AFS2.cpp
-	MDB1New.cpp
-	EXPANew.cpp
+	MDB1.cpp
+	EXPA.cpp
 	Compressors.cpp
 )
 
