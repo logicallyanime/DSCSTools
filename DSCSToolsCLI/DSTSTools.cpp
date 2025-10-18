@@ -23,7 +23,7 @@ namespace
         DSCS,
         DSCS_CONSOLE,
         DSTS,
-        HLTLA,
+        THL,
 
         INVALID,
     };
@@ -220,9 +220,9 @@ namespace
         using AFS2Module      = DummyAFS2Packer;
     };
 
-    struct HLTLAModule
+    struct THLModule
     {
-        using MDB1Module      = dscstools::mdb1new::HLTLDA;
+        using MDB1Module      = dscstools::mdb1new::THL;
         using EXPAModule      = dscstools::expa::EXPA64;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
@@ -477,10 +477,9 @@ namespace
         map["ts"]            = GameMode::DSTS;
         map["time-stranger"] = GameMode::DSTS;
 
-        map["hltla"]        = GameMode::HLTLA;
-        map["hundred-line"] = GameMode::HLTLA;
-        map["hl"]           = GameMode::HLTLA;
-        map["tla"]          = GameMode::HLTLA;
+        map["hundred-line"] = GameMode::THL;
+        map["thl"]        = GameMode::THL;
+        map["hl"]           = GameMode::THL;
         return map;
     }
 
@@ -542,7 +541,7 @@ int main(int argc, char** argv)
 
     auto base_options = desc.add_options();
     base_options("help,h", "This text.");
-    base_options("game,g", po::value<GameMode>()->required(), "Valid: dscs, dsts, hltla, dscs-console");
+    base_options("game,g", po::value<GameMode>()->required(), "Valid: dscs, dsts, thl, dscs-console");
     base_options("mode,m",
                  po::value<Mode>()->required(),
                  "pack-mvgl        -> folder in, file out\n"
@@ -601,7 +600,7 @@ int main(int argc, char** argv)
             case GameMode::DSCS: GameCLI<DSCSModule>::doAction(mode, vm); break;
             case GameMode::DSCS_CONSOLE: GameCLI<DSCSConsoleModule>::doAction(mode, vm); break;
             case GameMode::DSTS: GameCLI<DSTSModule>::doAction(mode, vm); break;
-            case GameMode::HLTLA: GameCLI<HLTLAModule>::doAction(mode, vm); break;
+            case GameMode::THL: GameCLI<THLModule>::doAction(mode, vm); break;
             case GameMode::INVALID: std::cout << "Invalid Game\n"; break;
         }
     }

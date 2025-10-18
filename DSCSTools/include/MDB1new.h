@@ -18,6 +18,9 @@
 
 namespace dscstools::mdb1new
 {
+    /**
+     * Represents an MDB1 implementation, detailing the using declarations it has to do.
+     */
     template<typename T>
     concept ArchiveType = requires {
         typename T::InputStream;
@@ -29,14 +32,78 @@ namespace dscstools::mdb1new
         typename T::Compressor;
     } && Compressor<typename T::Compressor>;
 
-    constexpr uint32_t MDB1_MAGIC_VALUE = 0x3142444d;
-
+    /**
+     * Represents the avilable compression mods when packing MDB1 files.
+     */
     enum class CompressMode
     {
         NONE,
         NORMAL,
         ADVANCED
     };
+
+    /**
+     * Represents the archive info, primarily the file list, extracted from a MDB1 file.
+     */
+    template<ArchiveType MDB>
+    class ArchiveInfo
+    {
+    public:
+        /**
+         * Construct a new ArchiveInfo by reading from the given path. If the path can't be read or the file is
+         * invalid/incompatible there will be no entries.
+         */
+        ArchiveInfo(std::filesystem::path path);
+
+        /**
+         * Extract all files in the archive into the given folder.
+         *
+         * @param output the folder to write the files into, if it doesn't exist it'll get created
+         * @return void if successful, an error string otherwise
+         */
+        std::expected<void, std::string> extract(std::filesystem::path output);
+
+        /**
+         * Extract a single files from the archive into the given file.
+         *
+         * @param output the file to write the data into, if it doesn't exist it'll get created
+         * @return void if successful, an error string otherwise
+         */
+        std::expected<void, std::string> extractSingleFile(std::filesystem::path output, std::string file);
+
+    private:
+        struct ArchiveEntry
+        {
+            uint64_t offset;
+            uint64_t fullSize;
+            uint64_t compressedSize;
+        };
+
+        MDB::InputStream input;
+        std::map<std::string, ArchiveEntry> entries;
+        uint64_t dataStart;
+
+        std::expected<void, std::string> extractFile(std::filesystem::path output, const ArchiveEntry& entry);
+    };
+
+    /**
+     * Created a new MDB1 archive from a given folder.
+     *
+     * @param output the folder to create the archive from
+     * @param target the file to write the data into, if it doesn't exist it'll get created
+     * @param compress the compress mode to be used
+     * @return void if successful, an error string otherwise
+     */
+    template<ArchiveType MDB>
+    std::expected<void, std::string>
+    packArchive(std::filesystem::path source, std::filesystem::path target, CompressMode compress);
+
+} // namespace dscstools::mdb1new
+
+/* Implementation */
+namespace dscstools::mdb1new::detail
+{
+    constexpr uint32_t MDB1_MAGIC_VALUE = 0x3142444d;
 
     struct MDB1Header32
     {
@@ -163,102 +230,6 @@ namespace dscstools::mdb1new
         }
     };
 
-    struct DSCS
-    {
-        using InputStream  = dscs_ifstream;
-        using OutputStream = dscs_ofstream;
-        using Header       = MDB1Header32;
-        using TreeEntry    = FileTreeEntry32;
-        using NameEntry    = FileNameEntry<0x3C, 4>;
-        using DataEntry    = FileDataEntry32;
-        using Compressor   = Doboz;
-
-        static_assert(sizeof(Header) == 0x14);
-        static_assert(sizeof(TreeEntry) == 0x08);
-        static_assert(sizeof(NameEntry) == 0x40);
-        static_assert(sizeof(DataEntry) == 0x0C);
-    };
-
-    struct DSCSNoCrypt
-    {
-        using InputStream  = std::ifstream;
-        using OutputStream = std::ofstream;
-        using Header       = MDB1Header32;
-        using TreeEntry    = FileTreeEntry32;
-        using NameEntry    = FileNameEntry<0x3C, 4>;
-        using DataEntry    = FileDataEntry32;
-        using Compressor   = Doboz;
-
-        static_assert(sizeof(Header) == 0x14);
-        static_assert(sizeof(TreeEntry) == 0x08);
-        static_assert(sizeof(NameEntry) == 0x40);
-        static_assert(sizeof(DataEntry) == 0x0C);
-    };
-
-    struct DSTS
-    {
-        using InputStream  = std::ifstream;
-        using OutputStream = std::ofstream;
-        using Header       = MDB1Header64;
-        using TreeEntry    = FileTreeEntry64;
-        using NameEntry    = FileNameEntry<0x7C, 4>;
-        using DataEntry    = FileDataEntry64;
-        using Compressor   = LZ4;
-
-        static_assert(sizeof(Header) == 0x20);
-        static_assert(sizeof(TreeEntry) == 0x10);
-        static_assert(sizeof(NameEntry) == 0x80);
-        static_assert(sizeof(DataEntry) == 0x18);
-    };
-
-    struct HLTLDA
-    {
-        using InputStream  = std::ifstream;
-        using OutputStream = std::ofstream;
-        using Header       = MDB1Header64;
-        using TreeEntry    = FileTreeEntry64;
-        using NameEntry    = FileNameEntry<0x7C, 4>;
-        using DataEntry    = FileDataEntry64;
-        using Compressor   = LZ4;
-
-        static_assert(sizeof(Header) == 0x20);
-        static_assert(sizeof(TreeEntry) == 0x10);
-        static_assert(sizeof(NameEntry) == 0x80);
-        static_assert(sizeof(DataEntry) == 0x18);
-    };
-
-    template<ArchiveType MDB>
-    struct ArchiveInfo
-    {
-        ArchiveInfo(std::filesystem::path path);
-
-        std::expected<void, std::string> extract(std::filesystem::path output);
-        std::expected<void, std::string> extractSingleFile(std::filesystem::path output, std::string file);
-
-    private:
-        struct ArchiveEntry
-        {
-            uint64_t offset;
-            uint64_t fullSize;
-            uint64_t compressedSize;
-        };
-
-        MDB::InputStream input;
-        std::map<std::string, ArchiveEntry> entries;
-        uint64_t dataStart;
-
-        std::expected<void, std::string> extractFile(std::filesystem::path output, const ArchiveEntry& entry);
-    };
-
-    template<ArchiveType MDB>
-    std::expected<void, std::string>
-    packArchive(std::filesystem::path source, std::filesystem::path target, CompressMode compress);
-
-} // namespace dscstools::mdb1new
-
-/* Implementation */
-namespace dscstools::mdb1new::detail
-{
     struct TreeName
     {
         std::string name;
@@ -319,6 +290,82 @@ namespace dscstools::mdb1new::detail
 namespace dscstools::mdb1new
 {
     using namespace detail;
+
+    /**
+     * Digimon Story: Cyber Sleuth Complete Edition (PC Release)
+     */
+    struct DSCS
+    {
+        using InputStream  = dscs_ifstream;
+        using OutputStream = dscs_ofstream;
+        using Header       = MDB1Header32;
+        using TreeEntry    = FileTreeEntry32;
+        using NameEntry    = FileNameEntry<0x3C, 4>;
+        using DataEntry    = FileDataEntry32;
+        using Compressor   = Doboz;
+
+        static_assert(sizeof(Header) == 0x14);
+        static_assert(sizeof(TreeEntry) == 0x08);
+        static_assert(sizeof(NameEntry) == 0x40);
+        static_assert(sizeof(DataEntry) == 0x0C);
+    };
+
+    /**
+     * Digimon Story: Cyber Sleuth (All non-PC releases)
+     */
+    struct DSCSNoCrypt
+    {
+        using InputStream  = std::ifstream;
+        using OutputStream = std::ofstream;
+        using Header       = MDB1Header32;
+        using TreeEntry    = FileTreeEntry32;
+        using NameEntry    = FileNameEntry<0x3C, 4>;
+        using DataEntry    = FileDataEntry32;
+        using Compressor   = Doboz;
+
+        static_assert(sizeof(Header) == 0x14);
+        static_assert(sizeof(TreeEntry) == 0x08);
+        static_assert(sizeof(NameEntry) == 0x40);
+        static_assert(sizeof(DataEntry) == 0x0C);
+    };
+
+    /**
+    * Digimon Story: Time Stranger
+    */
+    struct DSTS
+    {
+        using InputStream  = std::ifstream;
+        using OutputStream = std::ofstream;
+        using Header       = MDB1Header64;
+        using TreeEntry    = FileTreeEntry64;
+        using NameEntry    = FileNameEntry<0x7C, 4>;
+        using DataEntry    = FileDataEntry64;
+        using Compressor   = LZ4;
+
+        static_assert(sizeof(Header) == 0x20);
+        static_assert(sizeof(TreeEntry) == 0x10);
+        static_assert(sizeof(NameEntry) == 0x80);
+        static_assert(sizeof(DataEntry) == 0x18);
+    };
+
+    /**
+    * The Hundred Line -Last Defense Academy-
+    */
+    struct THL
+    {
+        using InputStream  = std::ifstream;
+        using OutputStream = std::ofstream;
+        using Header       = MDB1Header64;
+        using TreeEntry    = FileTreeEntry64;
+        using NameEntry    = FileNameEntry<0x7C, 4>;
+        using DataEntry    = FileDataEntry64;
+        using Compressor   = LZ4;
+
+        static_assert(sizeof(Header) == 0x20);
+        static_assert(sizeof(TreeEntry) == 0x10);
+        static_assert(sizeof(NameEntry) == 0x80);
+        static_assert(sizeof(DataEntry) == 0x18);
+    };
 
     template<ArchiveType MDB>
     ArchiveInfo<MDB>::ArchiveInfo(std::filesystem::path path)
