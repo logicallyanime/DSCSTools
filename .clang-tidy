@@ -1,0 +1,43 @@
+---
+Checks: "*,
+  -altera-*,
+  -android-*,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -fuchsia-*,
+  -llvm-header-guard,
+  -llvmlibc-*,
+  -modernize-use-integer-sign-comparison,
+  -mpi-*,
+  -objc-*,
+  -hicpp-braces-around-statements,
+  -hicpp-uppercase-literal-suffix,
+  -performance-enum-size,
+  -performance-inefficient-vector-operation,
+  -readability-uppercase-literal-suffix,
+  -readability-magic-numbers,
+  -readability-braces-around-statements,
+  -readability-identifier-length,
+  -google-*"
+WarningsAsErrors: ""
+HeaderFileExtensions:
+  - ""
+  - h
+  - hh
+  - hpp
+  - hxx
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+HeaderFilterRegex: ".*"
+ExcludeHeaderFilterRegex: ""
+FormatStyle: Microsoft
+SystemHeaders: false
+CheckOptions:
+  hicpp-signed-bitwise.IgnorePositiveIntegerLiterals: true
+---
+

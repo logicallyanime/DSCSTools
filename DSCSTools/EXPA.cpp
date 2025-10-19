@@ -125,7 +125,6 @@ namespace
         }
     }
 
-
     auto writeEXPAEntry(size_t base_offset, char* data, EntryType type, const EntryValue& value)
         -> std::optional<CHNKEntry>
     {

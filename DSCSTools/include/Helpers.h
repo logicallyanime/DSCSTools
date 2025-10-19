@@ -82,7 +82,7 @@ namespace dscstools
         if (step == 0) return value;
         return (value + step - 1) / step * step;
     }
-    
+
     template<int64_t step>
     inline void alignStream(std::ifstream& stream)
     {
