@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-namespace dscstools
+namespace mvgltools
 {
     inline auto file_equivalent(const std::filesystem::path& file1, const std::filesystem::path& file2) -> bool
     {
@@ -94,10 +94,10 @@ namespace dscstools
         return "^" + in + "$";
     }
 
-} // namespace dscstools
+} // namespace mvgltools
 
-namespace dscstools::test
+namespace mvgltools::test
 {
     static_assert(ceilInteger(76, 8) == 80);
     static_assert(ceilInteger(8, 8) == 8);
-} // namespace dscstools::test
+} // namespace mvgltools::test

@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-namespace dscstools::savefile
+namespace mvgltools::savefile
 {
     /**
      * Encrypts the PC save file given by sourceFile into targetFile.
@@ -12,4 +12,4 @@ namespace dscstools::savefile
      * Decrypts the PC save file given by sourceFile into targetFile.
      */
     void encryptSaveFile(const std::filesystem::path& source, const std::filesystem::path& target);
-} // namespace dscstools::savefile
+} // namespace mvgltools::savefile

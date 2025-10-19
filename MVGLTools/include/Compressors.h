@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace dscstools
+namespace mvgltools
 {
     /**
      * Represents the compressor interface, detailing all the static functions an implementation is required to have.
@@ -45,4 +45,4 @@ namespace dscstools
         static auto compress(const std::vector<char>& input) -> std::expected<std::vector<char>, std::string>;
         static auto isCompressed(const std::vector<char>& input) -> bool;
     };
-} // namespace dscstools
+} // namespace mvgltools

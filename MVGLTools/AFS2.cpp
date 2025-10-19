@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace dscstools::afs2
+namespace mvgltools::afs2
 {
     constexpr auto AFS2_MAGIC_VALUE = 0x32534641;
 
@@ -121,4 +121,4 @@ namespace dscstools::afs2
         output.write(reinterpret_cast<char*>(id.data()), header.numFiles * 2L);
         output.write(reinterpret_cast<char*>(offsets.data()), (header.numFiles + 1) * 4L);
     }
-} // namespace dscstools::afs2
+} // namespace mvgltools::afs2

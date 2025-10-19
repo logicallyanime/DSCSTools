@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-namespace dscstools
+namespace mvgltools
 {
     auto Doboz::decompress(const std::vector<char>& input, size_t size) -> std::expected<std::vector<char>, std::string>
     {
@@ -104,4 +104,4 @@ namespace dscstools
 
         return result >= 0;
     }
-} // namespace dscstools
+} // namespace mvgltools

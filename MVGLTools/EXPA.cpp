@@ -29,8 +29,8 @@
 
 namespace
 {
-    using namespace dscstools;
-    using namespace dscstools::expa;
+    using namespace mvgltools;
+    using namespace mvgltools::expa;
 
     constexpr auto getAlignment(EntryType type) -> uint32_t
     {
@@ -46,7 +46,7 @@ namespace
             case EntryType::STRING2: return 8;
             case EntryType::BOOL: return 4;
             case EntryType::EMPTY: return 0;
-            case EntryType::INT_ARRAY: return 8;
+            case EntryType::INT32_ARRAY: return 8;
             default: return 0;
         }
     }
@@ -65,7 +65,7 @@ namespace
             case EntryType::STRING2: return 8;
             case EntryType::BOOL: return 4;
             case EntryType::EMPTY: return 0;
-            case EntryType::INT_ARRAY: return 16;
+            case EntryType::INT32_ARRAY: return 16;
             default: return 0;
         }
     }
@@ -88,7 +88,7 @@ namespace
                 sstream << std::quoted(std::get<std::string>(value), '\"', '\"');
                 return sstream.str();
             }
-            case EntryType::INT_ARRAY:
+            case EntryType::INT32_ARRAY:
             {
                 auto data = std::get<std::vector<int32_t>>(value) |
                             std::views::transform([](auto val) { return std::to_string(val); });
@@ -118,7 +118,7 @@ namespace
             case EntryType::STRING2: return value;
 
             case EntryType::BOOL: return value == "true";
-            case EntryType::INT_ARRAY:
+            case EntryType::INT32_ARRAY:
                 return value | std::views::split(' ') | std::ranges::to<std::vector<std::string>>() |
                        std::views::transform([](const auto& val) { return std::stoi(val); }) |
                        std::ranges::to<std::vector<int32_t>>();
@@ -144,7 +144,7 @@ namespace
                 if (!str.empty()) return CHNKEntry(base_offset, str);
                 break;
             }
-            case EntryType::INT_ARRAY:
+            case EntryType::INT32_ARRAY:
             {
                 const auto& array                      = get<std::vector<int32_t>>(value);
                 *reinterpret_cast<uint32_t*>(data)     = static_cast<int32_t>(array.size());
@@ -181,7 +181,7 @@ namespace
                 return (ptr != nullptr) ? std::string(ptr) : "";
             }
             case EntryType::BOOL: return ((*reinterpret_cast<const uint32_t*>(data) >> bitCounter) & 1u) == 1u;
-            case EntryType::INT_ARRAY:
+            case EntryType::INT32_ARRAY:
             {
                 auto count = *reinterpret_cast<const int32_t*>(data);
                 auto* ptr  = *reinterpret_cast<int32_t* const*>(data + 8);
@@ -195,7 +195,7 @@ namespace
 
 } // namespace
 
-namespace dscstools::expa
+namespace mvgltools::expa
 {
     Structure::Structure(std::vector<StructureEntry> structure)
         : structure(std::move(structure))
@@ -366,4 +366,4 @@ namespace dscstools::expa
         return {};
     }
 
-} // namespace dscstools::expa
+} // namespace mvgltools::expa

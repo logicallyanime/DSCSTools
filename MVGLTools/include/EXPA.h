@@ -25,7 +25,7 @@
 #include <variant>
 #include <vector>
 
-namespace dscstools::expa
+namespace mvgltools::expa
 {
     /**
      * Represents the value of an EXPA entry.
@@ -38,17 +38,17 @@ namespace dscstools::expa
      */
     enum class EntryType : uint32_t
     {
-        INT_ARRAY = 0,
-        UNK1      = 1,
-        INT32     = 2,
-        INT16     = 3,
-        INT8      = 4,
-        FLOAT     = 5,
-        STRING3   = 6, // ?
-        STRING    = 7, // ?
-        STRING2   = 8, // ?
-        BOOL      = 9,
-        EMPTY     = 10,
+        INT32_ARRAY = 0,
+        UNK1        = 1,
+        INT32       = 2,
+        INT16       = 3,
+        INT8        = 4,
+        FLOAT       = 5,
+        STRING3     = 6, // ?
+        STRING      = 7, // ?
+        STRING2     = 8, // ?
+        BOOL        = 9,
+        EMPTY       = 10,
     };
 
     /**
@@ -231,9 +231,9 @@ namespace dscstools::expa
      */
     template<EXPA expa>
     auto importCSV(const std::filesystem::path& source) -> std::expected<TableFile, std::string>;
-} // namespace dscstools::expa
+} // namespace mvgltools::expa
 
-namespace dscstools::expa::detail
+namespace mvgltools::expa::detail
 {
     constexpr auto EXPA_MAGIC = 0x41505845;
     constexpr auto CHNK_MAGIC = 0x4B4E4843;
@@ -285,18 +285,19 @@ namespace dscstools::expa::detail
         map["byte"]      = EntryType::INT8;
         map["short"]     = EntryType::INT16;
         map["int"]       = EntryType::INT32;
-        map["int array"] = EntryType::INT_ARRAY;
+        map["int array"] = EntryType::INT32_ARRAY;
         map["float"]     = EntryType::FLOAT;
 
-        map["int8"]    = EntryType::INT8;
-        map["int16"]   = EntryType::INT16;
-        map["int32"]   = EntryType::INT32;
-        map["float"]   = EntryType::FLOAT;
-        map["bool"]    = EntryType::BOOL;
-        map["empty"]   = EntryType::EMPTY;
-        map["string"]  = EntryType::STRING;
-        map["string2"] = EntryType::STRING2;
-        map["string3"] = EntryType::STRING3;
+        map["int8"]        = EntryType::INT8;
+        map["int16"]       = EntryType::INT16;
+        map["int32"]       = EntryType::INT32;
+        map["float"]       = EntryType::FLOAT;
+        map["bool"]        = EntryType::BOOL;
+        map["empty"]       = EntryType::EMPTY;
+        map["string"]      = EntryType::STRING;
+        map["string2"]     = EntryType::STRING2;
+        map["string3"]     = EntryType::STRING3;
+        map["int32 array"] = EntryType::INT32_ARRAY;
 
         return map;
     }
@@ -329,7 +330,7 @@ namespace dscstools::expa::detail
             case EntryType::STRING2: return "string2";
             case EntryType::BOOL: return "bool";
             case EntryType::EMPTY: return "empty";
-            case EntryType::INT_ARRAY: return "int array";
+            case EntryType::INT32_ARRAY: return "int32 array";
             default: return "invalid";
         }
     }
@@ -422,10 +423,10 @@ namespace dscstools::expa::detail
         return Structure{fromFile};
     }
 
-} // namespace dscstools::expa::detail
+} // namespace mvgltools::expa::detail
 
 // implementation
-namespace dscstools::expa
+namespace mvgltools::expa
 {
     using namespace detail;
 
@@ -608,4 +609,4 @@ namespace dscstools::expa
 
         return TableFile{finalTable};
     }
-} // namespace dscstools::expa
+} // namespace mvgltools::expa

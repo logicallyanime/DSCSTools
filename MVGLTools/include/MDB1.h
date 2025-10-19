@@ -27,7 +27,7 @@
 #include <thread>
 #include <vector>
 
-namespace dscstools::mdb1
+namespace mvgltools::mdb1
 {
     /**
      * Represents an MDB1 implementation, detailing the using declarations it has to do.
@@ -111,10 +111,10 @@ namespace dscstools::mdb1
     auto packArchive(const std::filesystem::path& source, const std::filesystem::path& target, CompressMode compress)
         -> std::expected<void, std::string>;
 
-} // namespace dscstools::mdb1
+} // namespace mvgltools::mdb1
 
 /* Implementation */
-namespace dscstools::mdb1::detail
+namespace mvgltools::mdb1::detail
 {
     constexpr uint32_t MDB1_MAGIC_VALUE = 0x3142444d;
 
@@ -301,10 +301,10 @@ namespace dscstools::mdb1::detail
             .data         = compressed,
         };
     }
-} // namespace dscstools::mdb1::detail
+} // namespace mvgltools::mdb1::detail
 
 // implementation
-namespace dscstools::mdb1
+namespace mvgltools::mdb1
 {
     using namespace detail;
 
@@ -587,4 +587,4 @@ namespace dscstools::mdb1
         output.write(reinterpret_cast<char*>(dataEntries.data()), dataEntries.size() * sizeof(typename MDB::DataEntry));
         return {};
     }
-} // namespace dscstools::mdb1
+} // namespace mvgltools::mdb1

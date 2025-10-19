@@ -1,108 +1,156 @@
-# DSCSTools
-DSCSTools are tools to extract and repack the game files for the Steam release of "Digimon Story Cyber Sleuth: Complete Edition". 
-They should work with other releases of the game as well as potentially other games based on the same engine, with some caveats.
+# MVGLTools
+This tool provides support to pack, unpack, decrypt and encrypt various file formats found in games using the game engine built and used by Media.Vision, appreviated "MVGL" (the exact meaning is unclear, probably Media.Vision Game Library).
 
-A library version to be linked by other tools is also available.
+Currently supported games are:
+- Digimon Story: Cyber Sleuth (DSCS)
+- Digimon Story: Time Stranger (DSTS)
+- The Hundred Line -Last Defense Academy- (THL)
+
+Other games *might* work with one of these presets. If you want other games to be added, please open an issue or contact me.
+
+The tool can also be used as library, for your own tools. Your milage might vary, though.
 
 # Current Features
-* Extract MDB1 (.mvgl) archives
-  * will work with encrypted and decrypted archives
-* Extract single file from MDB1 archive
+* Unpack MDB1 (.mvgl) archives
+* Unpack individual file from MDB1 (.mvgl) archives
 * Repack/Create MDB1 (.mvgl) archives
   * archives get recreated from scratch, files can be added, removed and modified at will
-  * output will be encrypted, for use with non-PC platforms you have to decrypt the file first
   * optional: with advanced compression, storing identical data only once. ~5% size improvement
   * optional: without compressing the file (faster build), final archive must be <= 4 GiB in size
-* Extract and import MBE files
-  * currently supports int8, int16, int32, float, int32 array and string field types
-* Extract and Rebuild AFS2 archives
-  * The resulting files are, like all sound files, in the HCA format. You can use [vgmstream](https://github.com/vgmstream/vgmstream) and [VGAudio](https://github.com/Thealexbarney/VGAudio) to convert them.
+* Unpack and repack MBE files
+* Unpack and repack AFS2 archives
+  * The resulting files are in the HCA format. You can use [vgmstream](https://github.com/vgmstream/vgmstream) and [VGAudio](https://github.com/Thealexbarney/VGAudio) to convert them.
   * Note: You'll need a newer version of VGAudio that supports encrypting HCA files.
-* Decrypt and Encrypt .steam.mvgl files
-  * some of the assets (DSDB, DSDBA, DSDBP, DSDBPse, DSDBS, DSDBse and DSDBSP) of the PC release are encrypted, the tool can decrypt and encrypt files
+* Decrypt and Encrypt game files, if the game does that
+  * Currently only Cyber Sleuth does this. This is not necessary for .mvgl extraction, as it performs this transparently.
 * Decrypt and Encrypt PC save files
+  * Currently only supported for Cyber Sleuth
 
 # Usage
-The tool itself is command line only. The MBE functionality requires you to have the `structures` folder relative from where you're calling the tool from.
+The tool is command line only. The MBE functionality requires you to have the `structures` folder relative from where you're calling the tool from.
 Hence it's recommended to navigate to the folder containing the DSCSTools binary first.
 
-Pherakki's [SimpleDSCSModManager](https://github.com/Pherakki/SimpleDSCSModManager) provides an easy to use GUI for the tools, while also serving as a general mod manager. 
+```
+MVGLToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]
+```
 
+## --game
+
+Valid values are:
+- dscs
+  - for Digimon Story: Cyber Sleuth Complete Edition on PC
+	- transparently de-/encrypts mvgl files
+	- requires structure files for MBE, see MBE section
+	- MVGL limited to 4GiB in size
+- dscs-console
+  - for Digimon Story: Cyber Sleuth Complete Edition on console or with decrypted PC assets
+	- requires structure files for MBE, see MBE section
+	- MVGL limited to 4GiB in size
+- dsts
+  - for Digimon Story: Time Stranger
+	- optional structure files for MBE
+- thl
+  - for The Hundred Line -Last Defense Academy-
+	- optional structure files for MBE
+
+## --mode
+
+### unpack-mvgl
+Unpacks a MVGL file from `source` into the folder given by `target`. If the game uses asset encryption, it will be dealt with transparently.
+
+### pack-mvgl
+Packs a MVGL file from a folder `source` and saves it into the file given by `target`. If the game uses asset encryption, it will be encrypted transparently.
+
+You can use the `--compress=<level>` option to specify how the files in the archive will be compressed.
+
+* `normal` - the regular compression, as in vanilla
+* `none` - no compression at all (faster builds, very large file sizes)
+* `advanced` - improve compression by deduplicating data (slower builds, slightly smaller file sizes)
+
+### unpack-mbe / unpack-mbe-dir
+Unpacks a .mbe file/a folder of .mbe files into CSV from `source` into a folder given by `target`.
+See the section on structure files.
+
+### pack-mbe / pack-mbe-dir
+Oacks a .mbe file/a folder of .mbe files into CSV from `source` folder into a file/folder given by `target`.
+See the section on structure files.
+
+### pack-afs2 / unpack-afs2
+Packs/unpacks a AFS2 formatted archive. 
+
+The resulting files are in the HCA format. You can use [vgmstream](https://github.com/vgmstream/vgmstream) and [VGAudio](https://github.com/Thealexbarney/VGAudio) to convert them.
+
+This is only supported by DSCS. Other games don't seem to use this format anymore.
+
+### file-encrypt / file-decrypt
+Encrypts/Decrypts an asset file using the game's asset encryption algorithm.
+
+This is only supported by DSCS. Other games don't encrypt their assets.
+For DSCS this operation is symetrical (so both operations do exactly the same).
+
+### save-encryt / save-decrypt
+Encrypts/Decrypts a save file.
+
+This is currently only supported by DSCS.
+To decrypt the saves of other games:
+* DSTS
+  * `openssl enc -d -aes-128-ecb -K 33393632373736373534353535383833 -in 0004.bin -out decrypted_save.bin -nopad`
+* TLA
+  * `openssl enc -d -aes-128-ecb -K bb3d99be083b97c62b14f8736eb30e39 -in 0004.bin -out decrypted_save.bin -nopad`
+
+## MBE files
+MBE Files contain a number of data tables and get extracted by the tool into CSV files that can be easily modified.
 **Do not use Microsoft Excel to modify extracted CSV files, it does *not* create RFC 4180 compliant CSV.** Use LibreOffice/OpenOffice as an alternative.
 
-```
-Extract:      DSCSTools --extract <sourceFile> <targetDirectory>
-File Extract: DSCSTools --extractFile <sourceFile> <targetDirectory> <fileName>
-Repack:       DSCSTools --pack <sourceDirectory> <targetFile> [--disable-compression|--advanced-compression]
-MBE Extract:  DSCSTools --mbeextract <source> <targetFolder>
-MBE Repack:   DSCSTools --mbepack <sourceFolder> <targetFile>
-AFS2 Extract: DSCSTools --afs2extract <source> <targetFolder>
-AFS2 Repackk: DSCSTools --afs2pack <sourceFolder> <targetFile>
-En/Decrypt:   DSCSTools --crypt <sourceFile> <targetFile>
-Save Decrypt: DSCSTools --savedecrypt <sourceFile> <targetFile>
-Save Encrypt: DSCSTools --saveencrypt <sourceFile> <targetFile>
-```
+In order for the MBE functions to work it to know the underlying data structure. For some games (DSCS) this has to be provided from the outside, while others (DSTS, THL) stored it in the file itself, albeit without names.
 
-## MBE Structure files
-In order for the MBE functions to work it needs to assume a data structure. For this a `structure.json` must be present in the `structures` folder of the tool or whereever you're calling it from.
-It contains simple `regexPattern: structureDefinition.json` associations. The tool match the currently handled file path with the patterns in the structure.json and pick the first match.
-You may need to maintain the folder structure of the files (most notably text and message files) for the tool to detect them properly.
+So in order to provide the structure and/or names, the `structures` folder and its contents should exist within the current working directory (i.e. the folder your terminal currently is in). For each game there is a subfolder (note: dscs and dscs-console are treated as the same), which each containing a `structure.json`.
+That file contains a simple `regexPattern: structureDefinition.json` associations. The tool matches the currently handled file path with the patterns and picks the first match.
+As these lookups happen both when unpacking and packing, it's important to maintain folder structures and files names, as otherwise file creation might fail or result in incompatible files.
 
-The structure definition is another JSON file following this format:
-Currently supported field types are `byte` (int8), `short` (int16), `int` (int32), `float`, `int array` and `string`.
 
-```
+### structureDefinition.json
+A structureDefinition.json contains one or more names tables of `name: fieldType` mappings. 
+
+Currently supported field types are:
+* int8
+* int16
+* int32
+* float
+* string
+* string2
+* string3
+* bool
+* empty
+
+The exact difference between the string types is yet unknown. 
+
+#### Example
+```jsonc
 {
-	tableName1: {
-		fieldName1: fieldType1,
-		fieldName2: fieldType2,
-		fieldNameN: fieldTypeN
+	# without the leading 000_
+	"tableName1": {
+		"fieldName1": "int8",
+		"fieldName2": "float",
+		"fieldNameN": "int32 array"
 	},
-	tableName2: {
-		fieldName1: "string",
-		fieldName2: "int",
-		fieldNameN: "int"
+	"tableName2": {
+		"fieldName1": "string",
+		"fieldName2": "int32",
+		"fieldNameN": "int32"
 	},
-	tableNameN: {
-		fieldName1: fieldType1,
-		fieldName2: fieldType2,
-		fieldNameN: fieldTypeN
+	"tableNameN": {
+		"fieldName1": "bool",
+		"fieldName2": "bool",
+		"fieldNameN": "int8"
 	}
 }
 ```
 
-## Library
-The tool can also be used as a library by other software. You can find the shared library+documented headers in the downloads.
-
-You can also use the library as Python module. Simply install the shared library in a place your Python program searchs for modules and you should be able
-to import it via `import DSCSTools`. Note, on Windows you'll have to rename the `DSCSTools.dll` to `DSCSTools.pyd`.
-
-Please note, the currently prebuild binaries only work on Python 3.8. Other Python versions require the library to be recompiled.
-
-For Python documentation head to the [Wiki Entry](https://github.com/SydMontague/DSCSTools/wiki/Python-Interfaces)
-
-
-# Build
-The project uses CMake. On Windows you can use Visual Studio's CMake integration.
-
-On *nix systems compiling should be a simple
-
-```
-$ git clone git@github.com:SydMontague/DSCSTools.git
-$ cd <project dir>
-$ cmake .
-$ make install
-```
-
-With the binary being located in /DSCSTools/
-
-## Requirements
-* Boost 1.66 or higher
-* CMake 3.10 or higher
-* A C++ compiler
-
+# Credits
 The tool uses:
 * the [doboz compression library](https://voxelium.wordpress.com/2011/03/19/doboz-compression-library-with-very-fast-decompression/). [License Notice](https://github.com/SydMontague/DSCSTools/blob/master/libs/doboz/COPYING.txt)
+* the [lz4 compression library](https://github.com/lz4/lz4). 
 * AriaFallah's [csv-parser](https://github.com/AriaFallah/csv-parser). [License Notice](https://github.com/SydMontague/DSCSTools/blob/master/libs/csv-parser/LICENSE)
 
 # Contact
@@ -113,6 +161,8 @@ The tool uses:
 
 # Other DSCS Modding Projects/Tools
 * [SimpleDSCSModManager](https://github.com/Pherakki/SimpleDSCSModManager) by Pherakki
+  * uses an older version of this tool under the hood
 * [Blender-Tools-for-DSCS](https://github.com/Pherakki/Blender-Tools-for-DSCS/) by Pherakki
+  * partial updated fork for DSTS/THL: https://github.com/Romsstar/Blender-Tools-for-DSCS/
 * [NutCracker](https://github.com/SydMontague/NutCracker)
   * a decompiler for the game's Squirrel script files

@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-namespace dscstools::afs2
+namespace mvgltools::afs2
 {
     /**
      * Extracts the AFS2 archive given by sourceFile into targetPath.
@@ -12,4 +12,4 @@ namespace dscstools::afs2
      * Packs the folder given by sourcePath into an AFS2 archive saved into targetFile.
      */
     void packAFS2(const std::filesystem::path& source, const std::filesystem::path& target);
-} // namespace dscstools::afs2
+} // namespace mvgltools::afs2

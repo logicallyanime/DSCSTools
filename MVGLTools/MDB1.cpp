@@ -20,7 +20,7 @@ namespace
 
 namespace
 {
-    using namespace dscstools::mdb1;
+    using namespace mvgltools::mdb1;
 
     constexpr auto isBitSet(const std::string_view name, size_t pos) -> bool
     {
@@ -82,7 +82,7 @@ namespace
 
 } // namespace
 
-namespace dscstools::mdb1::detail
+namespace mvgltools::mdb1::detail
 {
     // NOLINTNEXTLINE(readability-function-cognitive-complexity)
     auto generateTree(const std::vector<std::filesystem::path>& paths, const std::filesystem::path& source)
@@ -171,4 +171,4 @@ namespace dscstools::mdb1::detail
 
         return nodes;
     }
-} // namespace dscstools::mdb1::detail
+} // namespace mvgltools::mdb1::detail

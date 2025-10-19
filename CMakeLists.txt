@@ -1,9 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.28)
 
-project("DSCSTools"
+project("MVGLTools"
   VERSION 2.0.0
-  DESCRIPTION "Tools for Digimon Story Cyber Sleuth"
-  HOMEPAGE_URL "https://github.com/SydMontague/DSCSTools")
+  DESCRIPTION "Tools for game using the Media.Vision engine (e.g. Digimon Story)"
+  HOMEPAGE_URL "https://github.com/SydMontague/MVGLTools")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CXX_SCAN_FOR_MODULES OFF)
@@ -36,5 +36,5 @@ CPMAddPackage(
 )
 
 # Include sub-projects.
-add_subdirectory("DSCSTools")
-add_subdirectory("DSCSToolsCLI")
+add_subdirectory("MVGLTools")
+add_subdirectory("MVGLToolsCLI")

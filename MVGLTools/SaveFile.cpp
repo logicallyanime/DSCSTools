@@ -45,7 +45,7 @@ namespace
     }
 } // namespace
 
-namespace dscstools::savefile
+namespace mvgltools::savefile
 {
     // I don't want to break anything, that is already working...
     // NOLINTBEGIN(hicpp-signed-bitwise, hicpp-avoid-c-arrays, cppcoreguidelines-narrowing-conversions,
@@ -241,4 +241,4 @@ namespace dscstools::savefile
     // NOLINTEND(hicpp-signed-bitwise, hicpp-avoid-c-arrays, cppcoreguidelines-narrowing-conversions,
     // cppcoreguidelines-avoid-c-arrays,bugprone-narrowing-conversions)
 
-} // namespace dscstools::savefile
+} // namespace mvgltools::savefile

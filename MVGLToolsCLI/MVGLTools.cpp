@@ -86,7 +86,7 @@ namespace
             typename T::CryptModule;
             typename T::SaveCryptModule;
             typename T::AFS2Module;
-        } && dscstools::mdb1::ArchiveType<typename T::MDB1Module> && dscstools::expa::EXPA<typename T::EXPAModule> &&
+        } && mvgltools::mdb1::ArchiveType<typename T::MDB1Module> && mvgltools::expa::EXPA<typename T::EXPAModule> &&
         FileCryptModule<typename T::CryptModule> && SaveCryptModule<typename T::SaveCryptModule> &&
         AFS2Module<typename T::AFS2Module>;
 
@@ -112,7 +112,7 @@ namespace
         {
             try
             {
-                dscstools::savefile::encryptSaveFile(source, target);
+                mvgltools::savefile::encryptSaveFile(source, target);
                 return {};
             }
             catch (std::exception& ex)
@@ -126,7 +126,7 @@ namespace
         {
             try
             {
-                dscstools::savefile::decryptSaveFile(source, target);
+                mvgltools::savefile::decryptSaveFile(source, target);
                 return {};
             }
             catch (std::exception& ex)
@@ -158,7 +158,7 @@ namespace
         {
             try
             {
-                dscstools::afs2::extractAFS2(source, target);
+                mvgltools::afs2::extractAFS2(source, target);
                 return {};
             }
             catch (std::exception& ex)
@@ -172,7 +172,7 @@ namespace
         {
             try
             {
-                dscstools::afs2::packAFS2(source, target);
+                mvgltools::afs2::packAFS2(source, target);
                 return {};
             }
             catch (std::exception& ex)
@@ -205,11 +205,11 @@ namespace
             if (!std::filesystem::is_regular_file(source)) return std::unexpected("Input path is not a file.");
             if (std::filesystem::exists(target) && !std::filesystem::is_regular_file(target))
                 return std::unexpected("Output path exists and is not a file.");
-            if (dscstools::file_equivalent(source, target))
+            if (mvgltools::file_equivalent(source, target))
                 return std::unexpected("Input and output file must be different.");
 
-            dscstools::mdb1::DSCS::InputStream input(source, std::ios::binary | std::ios::in);
-            dscstools::mdb1::DSCS::OutputStream output(target, std::ios::binary | std::ios::out);
+            mvgltools::mdb1::DSCS::InputStream input(source, std::ios::binary | std::ios::in);
+            mvgltools::mdb1::DSCS::OutputStream output(target, std::ios::binary | std::ios::out);
 
             std::streamsize offset = 0;
             std::array<char, 0x2000> inArr{};
@@ -234,8 +234,8 @@ namespace
 
     struct DSTSModule
     {
-        using MDB1Module      = dscstools::mdb1::DSTS;
-        using EXPAModule      = dscstools::expa::DSTS;
+        using MDB1Module      = mvgltools::mdb1::DSTS;
+        using EXPAModule      = mvgltools::expa::DSTS;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
         using AFS2Module      = DummyAFS2Packer;
@@ -243,8 +243,8 @@ namespace
 
     struct THLModule
     {
-        using MDB1Module      = dscstools::mdb1::THL;
-        using EXPAModule      = dscstools::expa::THL;
+        using MDB1Module      = mvgltools::mdb1::THL;
+        using EXPAModule      = mvgltools::expa::THL;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
         using AFS2Module      = DummyAFS2Packer;
@@ -252,8 +252,8 @@ namespace
 
     struct DSCSModule
     {
-        using MDB1Module      = dscstools::mdb1::DSCS;
-        using EXPAModule      = dscstools::expa::DSCS;
+        using MDB1Module      = mvgltools::mdb1::DSCS;
+        using EXPAModule      = mvgltools::expa::DSCS;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
         using AFS2Module      = DSCSAFS2Packer;
@@ -261,8 +261,8 @@ namespace
 
     struct DSCSConsoleModule
     {
-        using MDB1Module      = dscstools::mdb1::DSCSNoCrypt;
-        using EXPAModule      = dscstools::expa::DSCS;
+        using MDB1Module      = mvgltools::mdb1::DSCSNoCrypt;
+        using EXPAModule      = mvgltools::expa::DSCS;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
         using AFS2Module      = DSCSAFS2Packer;
@@ -273,14 +273,14 @@ namespace
     {
         static void packMVGL(const std::filesystem::path& source,
                              const std::filesystem::path& target,
-                             dscstools::mdb1::CompressMode compress)
+                             mvgltools::mdb1::CompressMode compress)
         {
-            auto result = dscstools::mdb1::packArchive<typename T::MDB1Module>(source, target, compress);
+            auto result = mvgltools::mdb1::packArchive<typename T::MDB1Module>(source, target, compress);
             if (!result) std::cout << result.error() << "\n";
         }
         static void unpackMVGL(const std::filesystem::path& source, const std::filesystem::path& target)
         {
-            dscstools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
+            mvgltools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
             auto result = archive.extract(target);
             if (!result) std::cout << result.error() << "\n";
         }
@@ -288,7 +288,7 @@ namespace
                                    const std::filesystem::path& target,
                                    const std::string& file)
         {
-            dscstools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
+            mvgltools::mdb1::ArchiveInfo<typename T::MDB1Module> archive(source);
             auto result = archive.extractSingleFile(target, file);
             if (!result) std::cout << result.error() << "\n";
         }
@@ -296,28 +296,28 @@ namespace
         static void unpackMBE(const std::filesystem::path& source, const std::filesystem::path& target)
         {
             std::cout << source << "\n";
-            auto result = dscstools::expa::readEXPA<typename T::EXPAModule>(source);
+            auto result = mvgltools::expa::readEXPA<typename T::EXPAModule>(source);
             if (!result)
             {
                 std::cout << result.error() << "\n";
                 return;
             }
 
-            auto result2 = dscstools::expa::exportCSV(result.value(), target / source.filename());
+            auto result2 = mvgltools::expa::exportCSV(result.value(), target / source.filename());
             if (!result2) std::cout << result2.error() << "\n";
         }
 
         static void packMBE(const std::filesystem::path& source, const std::filesystem::path& target)
         {
             std::cout << source << "\n";
-            auto result = dscstools::expa::importCSV<typename T::EXPAModule>(source);
+            auto result = mvgltools::expa::importCSV<typename T::EXPAModule>(source);
             if (!result)
             {
                 std::cout << result.error() << "\n";
                 return;
             }
 
-            auto result2 = dscstools::expa::writeEXPA<typename T::EXPAModule>(result.value(), target);
+            auto result2 = mvgltools::expa::writeEXPA<typename T::EXPAModule>(result.value(), target);
             if (!result2) std::cout << result2.error() << "\n";
         }
 
@@ -399,7 +399,7 @@ namespace
             {
                 case Mode::PACK_MVGL:
                 {
-                    auto compress = vm["compress"].as<dscstools::mdb1::CompressMode>();
+                    auto compress = vm["compress"].as<mvgltools::mdb1::CompressMode>();
                     packMVGL(source, target, compress);
                     break;
                 }
@@ -509,12 +509,12 @@ namespace
         return map;
     }
 
-    auto getCompressionMap() -> std::map<std::string, dscstools::mdb1::CompressMode>
+    auto getCompressionMap() -> std::map<std::string, mvgltools::mdb1::CompressMode>
     {
-        std::map<std::string, dscstools::mdb1::CompressMode> map;
-        map["normal"]   = dscstools::mdb1::CompressMode::NORMAL;
-        map["none"]     = dscstools::mdb1::CompressMode::NONE;
-        map["advanced"] = dscstools::mdb1::CompressMode::ADVANCED;
+        std::map<std::string, mvgltools::mdb1::CompressMode> map;
+        map["normal"]   = mvgltools::mdb1::CompressMode::NORMAL;
+        map["none"]     = mvgltools::mdb1::CompressMode::NONE;
+        map["advanced"] = mvgltools::mdb1::CompressMode::ADVANCED;
         return map;
     }
 
@@ -548,7 +548,7 @@ namespace
 
 } // namespace
 
-namespace dscstools::mdb1
+namespace mvgltools::mdb1
 {
     // NOLINTNEXTLINE(misc-use-internal-linkage)
     void validate(boost::any& value, const std::vector<std::string>& values, CompressMode* /*unused*/, int /*unused*/)
@@ -556,15 +556,15 @@ namespace dscstools::mdb1
         static const std::map<std::string, CompressMode> map = getCompressionMap();
         validate_helper(value, values, map);
     }
-} // namespace dscstools::mdb1
+} // namespace mvgltools::mdb1
 
 auto main(int argc, char** argv) -> int
 {
     namespace po = boost::program_options;
     po::variables_map vm;
     po::positional_options_description pos;
-    po::options_description desc("DSCSTools v2.0.0-beta1 by SydMontague | https://github.com/SydMontague/DSCSTools/\n"
-                                 "Usage: DSTSToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
+    po::options_description desc("MVGLTools v2.0.0-beta1 by SydMontague | https://github.com/SydMontague/MVGLTools/\n"
+                                 "Usage: MVGLToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
                                  120);
 
     auto base_options = desc.add_options();
@@ -601,7 +601,7 @@ auto main(int argc, char** argv) -> int
     auto pack_options = pack_desc.add_options();
     pack_options(
         "compress",
-        po::value<dscstools::mdb1::CompressMode>()->default_value(dscstools::mdb1::CompressMode::NORMAL, "normal"),
+        po::value<mvgltools::mdb1::CompressMode>()->default_value(mvgltools::mdb1::CompressMode::NORMAL, "normal"),
         "normal   -> use regular compression, as in vanilla files\n"
         "none     -> use no compression\n"
         "advanced -> improve compression by deduplicating, slower");
