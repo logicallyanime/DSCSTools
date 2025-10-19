@@ -14,7 +14,7 @@
 
 namespace dscstools::afs2
 {
-    constexpr auto AFS2_MAGIC_VALUE = '2SFA';
+    constexpr auto AFS2_MAGIC_VALUE = 0x32534641;
 
     struct AFS2Header
     {

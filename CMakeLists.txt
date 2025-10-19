@@ -14,16 +14,13 @@ if(MSVC)
   add_definitions("-D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0A00") # Windows 10
 endif()
 
-option(BUILD_SHARED_LIBS "Build Using Shared Libs" OFF)
-option(BUILD_CLI_APP "Build CLI Application" ON)
-
 # --- Libraries ---
 # doboz
 add_subdirectory("libs/doboz" SYSTEM)
 # lz4
 add_subdirectory("libs/lz4" SYSTEM)
 # csv-parser
-add_subdirectory("libs/csv-parser")
+add_subdirectory("libs/csv-parser" SYSTEM)
 
 # boost
 if(WIN32)
