@@ -235,7 +235,7 @@ namespace
     struct DSTSModule
     {
         using MDB1Module      = dscstools::mdb1::DSTS;
-        using EXPAModule      = dscstools::expa::EXPA64;
+        using EXPAModule      = dscstools::expa::DSTS;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
         using AFS2Module      = DummyAFS2Packer;
@@ -244,7 +244,7 @@ namespace
     struct THLModule
     {
         using MDB1Module      = dscstools::mdb1::THL;
-        using EXPAModule      = dscstools::expa::EXPA64;
+        using EXPAModule      = dscstools::expa::THL;
         using CryptModule     = DummyFileCryptor;
         using SaveCryptModule = DummySaveCryptor;
         using AFS2Module      = DummyAFS2Packer;
@@ -253,7 +253,7 @@ namespace
     struct DSCSModule
     {
         using MDB1Module      = dscstools::mdb1::DSCS;
-        using EXPAModule      = dscstools::expa::EXPA32;
+        using EXPAModule      = dscstools::expa::DSCS;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
         using AFS2Module      = DSCSAFS2Packer;
@@ -262,7 +262,7 @@ namespace
     struct DSCSConsoleModule
     {
         using MDB1Module      = dscstools::mdb1::DSCSNoCrypt;
-        using EXPAModule      = dscstools::expa::EXPA32;
+        using EXPAModule      = dscstools::expa::DSCS;
         using CryptModule     = DSCSFileCryptor;
         using SaveCryptModule = DSCSSaveCryptor;
         using AFS2Module      = DSCSAFS2Packer;
@@ -310,7 +310,7 @@ namespace
         static void packMBE(const std::filesystem::path& source, const std::filesystem::path& target)
         {
             std::cout << source << "\n";
-            auto result = dscstools::expa::importCSV(source);
+            auto result = dscstools::expa::importCSV<typename T::EXPAModule>(source);
             if (!result)
             {
                 std::cout << result.error() << "\n";
@@ -563,7 +563,8 @@ auto main(int argc, char** argv) -> int
     namespace po = boost::program_options;
     po::variables_map vm;
     po::positional_options_description pos;
-    po::options_description desc("Usage: DSTSToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
+    po::options_description desc("DSCSTools v2.0.0-beta1 by SydMontague | https://github.com/SydMontague/DSCSTools/\n"
+                                 "Usage: DSTSToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
                                  120);
 
     auto base_options = desc.add_options();
@@ -634,7 +635,8 @@ auto main(int argc, char** argv) -> int
     }
     catch (std::exception& ex)
     {
-        if (vm.contains("help"))
+        // must check for size 1, since compress has a default value
+        if (vm.size() == 1 || vm.contains("help"))
             std::cout << desc;
         else
             std::cout << ex.what() << '\n';

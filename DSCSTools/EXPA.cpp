@@ -19,7 +19,6 @@
 #include <fstream>
 #include <iomanip>
 #include <ios>
-#include <map>
 #include <optional>
 #include <ranges>
 #include <sstream>
@@ -32,85 +31,6 @@ namespace
 {
     using namespace dscstools;
     using namespace dscstools::expa;
-
-    constexpr auto STRUCTURE_FOLDER = "structures/";
-    constexpr auto STRUCTURE_FILE   = "structures/structure.json";
-
-    struct CSVFile
-    {
-    private:
-        std::vector<std::string> header;
-        std::vector<std::vector<std::string>> rows;
-
-    public:
-        explicit CSVFile(const std::filesystem::path& path)
-        {
-            std::ifstream stream(path, std::ios::in);
-            aria::csv::CsvParser parser(stream);
-
-            for (const auto& row : parser)
-            {
-                std::vector<std::string> data;
-                for (const auto& field : row)
-                    data.push_back(field);
-
-                if (header.empty())
-                    header = data;
-                else
-                    rows.push_back(data);
-            }
-        }
-
-        [[nodiscard]] auto getHeader() const -> std::vector<std::string> { return header; }
-        [[nodiscard]] auto getRows() const -> std::vector<std::vector<std::string>> { return rows; }
-    };
-
-    auto getTypeMap() -> std::map<std::string, EntryType>
-    {
-        std::map<std::string, EntryType> map;
-        map["byte"]      = EntryType::INT8;
-        map["short"]     = EntryType::INT16;
-        map["int"]       = EntryType::INT32;
-        map["int array"] = EntryType::INT_ARRAY;
-        map["float"]     = EntryType::FLOAT;
-
-        map["int8"]    = EntryType::INT8;
-        map["int16"]   = EntryType::INT16;
-        map["int32"]   = EntryType::INT32;
-        map["float"]   = EntryType::FLOAT;
-        map["bool"]    = EntryType::BOOL;
-        map["empty"]   = EntryType::EMPTY;
-        map["string"]  = EntryType::STRING;
-        map["string2"] = EntryType::STRING2;
-        map["string3"] = EntryType::STRING3;
-
-        return map;
-    }
-
-    inline auto convertEntryType(const std::string& val) -> EntryType
-    {
-        static const std::map<std::string, EntryType> map = getTypeMap();
-        return map.contains(val) ? map.at(val) : EntryType::EMPTY;
-    }
-
-    constexpr auto toString(EntryType type) -> std::string
-    {
-        switch (type)
-        {
-            case EntryType::UNK1: return "unk1";
-            case EntryType::INT32: return "int32";
-            case EntryType::INT16: return "int16";
-            case EntryType::INT8: return "int8";
-            case EntryType::FLOAT: return "float";
-            case EntryType::STRING3: return "string3";
-            case EntryType::STRING: return "string";
-            case EntryType::STRING2: return "string2";
-            case EntryType::BOOL: return "bool";
-            case EntryType::EMPTY: return "empty";
-            case EntryType::INT_ARRAY: return "int array";
-            default: return "invalid";
-        }
-    }
 
     constexpr auto getAlignment(EntryType type) -> uint32_t
     {
@@ -205,51 +125,6 @@ namespace
         }
     }
 
-    auto getStructureFromFile(const std::filesystem::path& filePath, const std::string& tableName)
-        -> std::vector<StructureEntry>
-    {
-        if (!std::filesystem::is_directory(STRUCTURE_FOLDER)) return {};
-        if (!std::filesystem::exists(STRUCTURE_FILE)) return {};
-
-        boost::property_tree::ptree structure;
-        boost::property_tree::read_json(STRUCTURE_FILE, structure);
-
-        std::string formatFile;
-        for (auto var : structure)
-        {
-            if (boost::regex_search(filePath.string(), boost::regex{var.first}))
-            {
-                formatFile = var.second.data();
-                break;
-            }
-        }
-
-        if (formatFile.empty()) return {};
-
-        boost::property_tree::ptree format;
-        boost::property_tree::read_json("structures/" + formatFile, format);
-
-        auto formatValue = format.get_child_optional(tableName);
-        if (!formatValue)
-        {
-            // Scan all table definitions to find a matching regex expression, if any
-            for (auto& kv : format)
-            {
-                if (boost::regex_search(tableName, boost::regex{wrapRegex(kv.first)}))
-                {
-                    formatValue = kv.second;
-                    break;
-                }
-            }
-        }
-        if (!formatValue) return {};
-
-        std::vector<StructureEntry> entries;
-        for (const auto& val : formatValue.get())
-            entries.emplace_back(val.first, convertEntryType(val.second.data()));
-
-        return entries;
-    }
 
     auto writeEXPAEntry(size_t base_offset, char* data, EntryType type, const EntryValue& value)
         -> std::optional<CHNKEntry>
@@ -319,26 +194,6 @@ namespace
         }
     }
 
-    auto getCSVStructure(const CSVFile& csv) -> std::vector<StructureEntry>
-    {
-        auto lambda = [](const auto& val)
-        { return StructureEntry{val, convertEntryType(val.substr(0, val.find_last_of(" ")))}; };
-
-        return csv.getHeader() | std::views::transform(lambda) | std::ranges::to<std::vector<StructureEntry>>();
-    }
-
-    auto getStructureCSV(const CSVFile& csv, const std::filesystem::path& filePath, const std::string& tableName)
-        -> Structure
-    {
-        auto structure = getCSVStructure(csv);
-
-        auto fromFile = getStructureFromFile(filePath, tableName);
-        if (fromFile.empty()) return Structure{structure};
-        if (fromFile.size() != structure.size()) return Structure{structure};
-
-        // file has priority over header, as header might resolve to EMPTY
-        return Structure{fromFile};
-    }
 } // namespace
 
 namespace dscstools::expa
@@ -489,36 +344,6 @@ namespace dscstools::expa
         std::copy_n(reinterpret_cast<const char*>(data.data()), value.size(), value.begin());
     }
 
-    auto EXPA32::getStructure([[maybe_unused]] std::ifstream& stream,
-                              const std::filesystem::path& filePath,
-                              const std::string& tableName) -> Structure
-    {
-        return Structure{getStructureFromFile(filePath, tableName)};
-    }
-
-    auto EXPA64::getStructure(std::ifstream& stream,
-                              const std::filesystem::path& filePath,
-                              const std::string& tableName) -> Structure
-    {
-        std::vector<StructureEntry> structure;
-        auto structureCount = read<uint32_t>(stream);
-        for (int32_t j = 0; j < structureCount; j++)
-        {
-            auto type = read<EntryType>(stream);
-            structure.emplace_back(std::format("{} {}", toString(type), j), type);
-        }
-
-        auto fromFile = getStructureFromFile(filePath, tableName);
-        if (fromFile.empty()) return Structure{structure};
-        if (fromFile.size() != structureCount) return Structure{structure};
-
-        auto lambda   = [](const auto& val) { return std::get<0>(val).type != std::get<1>(val).type; };
-        auto mismatch = std::ranges::any_of(std::ranges::views::zip(structure, fromFile), lambda);
-        if (mismatch) return Structure{structure};
-
-        return Structure{fromFile};
-    }
-
     auto exportCSV(const TableFile& file, const std::filesystem::path& target) -> std::expected<void, std::string>
     {
         if (std::filesystem::exists(target) && !std::filesystem::is_directory(target))
@@ -542,32 +367,4 @@ namespace dscstools::expa
         return {};
     }
 
-    auto importCSV(const std::filesystem::path& source) -> std::expected<TableFile, std::string>
-    {
-        if (!std::filesystem::exists(source) || !std::filesystem::is_directory(source))
-            return std::unexpected("Source path doesn't exist or is not a directory.");
-
-        const std::filesystem::directory_iterator itr(source);
-        std::vector<std::filesystem::path> files;
-        for (const auto& val : itr)
-            if (val.is_regular_file()) files.push_back(val);
-        std::ranges::sort(files);
-
-        std::vector<Table> tables;
-
-        for (const auto& file : files)
-        {
-            const CSVFile csv(file);
-
-            auto name      = file.stem().generic_string().substr(4);
-            auto structure = getStructureCSV(csv, source, name);
-            auto entries   = csv.getRows() |
-                           std::views::transform([&](const auto& val) { return structure.readCSV(val); }) |
-                           std::ranges::to<std::vector<std::vector<EntryValue>>>();
-
-            tables.emplace_back(name, structure, entries);
-        }
-
-        return TableFile{tables};
-    }
 } // namespace dscstools::expa
