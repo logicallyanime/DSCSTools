@@ -1,10 +1,13 @@
 ﻿#include <iostream>
 #include <cstring>
+#include <chrono>
+
 
 #include "MDB1.h"
 #include "SaveFile.h"
 #include "EXPA.h"
 #include "AFS2.h"
+#include <mutex>
 
 void printUse() {
 	std::cout << "DSCSTools v1.1.0 by SydMontague | https://github.com/SydMontague/DSCSTools/" << std::endl;
@@ -44,7 +47,59 @@ void printUse() {
 	std::cout << "		Decompresses a file previously compressed by the doboz library." << std::endl;
 }
 
+struct TimeTracker {
+	std::mutex m;
+	int active = 0;
+	std::chrono::steady_clock::time_point start, end;
+	std::chrono::nanoseconds elapsed = std::chrono::nanoseconds::zero();
+
+	void begin() {
+		auto now = std::chrono::steady_clock::now();
+		std::lock_guard<std::mutex> lk(m);
+		if (active++ == 0) start = now;
+	}
+	void finish() {
+		auto now = std::chrono::steady_clock::now();
+		std::lock_guard<std::mutex> lk(m);
+		if (--active == 0)
+		{
+			end = now;
+			elapsed += end - start;
+		}
+		else
+			active = 0; // Just in case
+	}
+	std::chrono::nanoseconds duration() const {
+		return elapsed;
+	}
+	void reset() {
+		active = 0;
+		elapsed = std::chrono::nanoseconds::zero();
+	}
+};
+
+static TimeTracker preextractionTracker, cryptTracker, compressionTracker, writeTracker, tracker;
+
+void printTimeTaken(std::chrono::nanoseconds timeElapsed) {
+	timeElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed);
+	auto timeMin = std::chrono::duration_cast<std::chrono::minutes>(timeElapsed);
+	timeElapsed -= timeMin;
+	auto timeSec = std::chrono::duration_cast<std::chrono::seconds>(timeElapsed);
+	timeElapsed -= timeSec;
+	auto timeMilli = std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed);
+	//std::stringstream ss;
+	std::cout << "Time taken: "
+		<< std::setfill('0') << std::setw(2) << timeMin.count() << ":"
+		<< std::setfill('0') << std::setw(2) << timeSec.count() << "."
+		<< std::setfill('0') << std::setw(3) << timeMilli.count() << std::endl;
+	//OutputDebugString(ss.str().c_str());
+}
+
 int main(int argc, char** argv) {
+	argc = 4; 
+	argv[1] = (char*)"--extract"; 
+	argv[2] = (char*)"C:\\Games\\DigimonStoryCyberSleuthCompleteEdition\\resources\\DSDB.steam.mvgl"; 
+	argv[3] = (char*)"C:\\Games\\DigimonStoryCyberSleuthCompleteEdition\\resources\\DSDB_extracted";
 	if (argc < 4) {
 		printUse();
 		return 0;
@@ -63,9 +118,23 @@ int main(int argc, char** argv) {
 			std::cout << "Done" << std::endl;
 		}
 		else if (strncmp("--extract", argv[1], 10) == 0) {
+			using namespace std::chrono;
 			bool decompress = argc < 5 || strncmp("--compressed", argv[4], 13) != 0;
-
-			dscstools::mdb1::extractMDB1(source, target, decompress);
+			std::cout << "Beginning Archive Extraction..." << std::endl;
+			//tracker.begin();
+			//dscstools::mdb1::extractMDB1(source, target, decompress);
+			//tracker.finish();
+			//std::cout << "Base: ";printTimeTaken(tracker.duration());
+			//tracker.reset();
+			//tracker.begin();
+			//dscstools::mdb1::extractMDB1_MMAP_single(source, target, decompress);
+			//tracker.finish();
+			//std::cout << "MMap single: ";printTimeTaken(tracker.duration());
+			//tracker.reset();
+			//tracker.begin();
+			dscstools::mdb1::extractMDB1_MMAP_parallel(source, target, decompress);
+			//tracker.finish();
+			//std::cout << "MMap parallel: ";printTimeTaken(tracker.duration());
 			std::cout << "Done" << std::endl;
 		}
 		else if (strncmp("--pack", argv[1], 7) == 0) {
