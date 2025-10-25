@@ -72,8 +72,12 @@ Unpacks a .mbe file/a folder of .mbe files into CSV from `source` into a folder 
 See the section on structure files.
 
 ### pack-mbe / pack-mbe-dir
-Oacks a .mbe file/a folder of .mbe files into CSV from `source` folder into a file/folder given by `target`.
+Packs a .mbe file/a folder of .mbe files into CSV from `source` folder into a file/folder given by `target`.
 See the section on structure files.
+
+### dump-structures
+Creates a `structure.json` entry for every readable `.mbe` file in a given `source` folder, searching recursively, and stores it in the `target` folder.
+These are intended to be used as a base for filling the `structures` folder with meaningful data.
 
 ### pack-afs2 / unpack-afs2
 Packs/unpacks a AFS2 formatted archive. 

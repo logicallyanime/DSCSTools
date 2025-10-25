@@ -11,6 +11,8 @@
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree_fwd.hpp>
 
 #include <array>
 #include <cctype>
@@ -18,6 +20,8 @@
 #include <exception>
 #include <expected>
 #include <filesystem>
+#include <format>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <ranges>
@@ -382,8 +386,45 @@ namespace
         static void dumpMBEStructures([[maybe_unused]] const std::filesystem::path& source,
                                       [[maybe_unused]] const std::filesystem::path& target)
         {
-            // TODO implement
-            std::cout << "No implemented yet.\n";
+            if (!std::filesystem::exists(source) || !std::filesystem::is_directory(source)) return;
+            if (std::filesystem::exists(target) && !std::filesystem::is_directory(target)) return;
+
+            std::filesystem::create_directories(target);
+
+            const std::filesystem::recursive_directory_iterator itr(source);
+
+            boost::property_tree::ptree structureMap;
+
+            for (const auto& file : itr)
+            {
+                if (!file.is_regular_file() && file.path().extension() != "mbe") continue;
+
+                auto table = mvgltools::expa::readEXPA<typename T::EXPAModule>(file);
+                if (!table) continue;
+
+                auto jsonName = std::format("{}.json", file.path().filename().string());
+                auto path     = boost::property_tree::ptree::path_type{file.path().filename().stem().string(), '\\'};
+                structureMap.add(path, jsonName);
+
+                boost::property_tree::ptree structure;
+                for (const auto& table : table.value().tables)
+                {
+                    boost::property_tree::ptree tableTree;
+
+                    for (const auto& entry : table.structure.getStructure())
+                        tableTree.add(entry.name, mvgltools::expa::detail::toString(entry.type));
+
+                    structure.add_child(table.name, tableTree);
+                }
+
+                std::ofstream fileFile(target / jsonName);
+                boost::property_tree::write_json(fileFile, structure);
+            }
+
+            structureMap.sort();
+
+            std::ofstream mappingFile(target / "structure.json");
+            boost::property_tree::write_json(mappingFile, structureMap);
         }
 
         static void packAFS2(const std::filesystem::path& source, const std::filesystem::path& target)
@@ -455,8 +496,6 @@ namespace
                 case Mode::DUMP_MBE_STRUCTURES: dumpMBEStructures(source, target); break;
                 case Mode::INVALID: std::cout << "Invalid mode!\n"; break;
             }
-
-            std::cout << "Done\n";
         }
     };
 
@@ -520,6 +559,8 @@ namespace
         map["encryptsave"]  = Mode::ENCRYPT_SAVE;
         map["encrypt-save"] = Mode::ENCRYPT_SAVE;
         map["save-encrypt"] = Mode::ENCRYPT_SAVE;
+
+        map["dump-structures"] = Mode::DUMP_MBE_STRUCTURES;
 
         return map;
     }
@@ -599,7 +640,7 @@ auto main(int argc, char** argv) -> int
     namespace po = boost::program_options;
     po::variables_map vm;
     po::positional_options_description pos;
-    po::options_description desc("MVGLTools v2.0.0-beta1 by SydMontague | https://github.com/SydMontague/MVGLTools/\n"
+    po::options_description desc("MVGLTools v2.0.0 by SydMontague | https://github.com/SydMontague/MVGLTools/\n"
                                  "Usage: MVGLToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
                                  120);
 
