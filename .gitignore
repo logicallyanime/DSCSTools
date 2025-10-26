@@ -5,13 +5,13 @@
 CMakeCache.txt
 Makefile
 install_manifest.txt
+CPM_Modules/
 
 # Build files
 *.o
 *.a
-/DSCSTools/DSCSTools
-/DSCSTools/DSCSTools.exe
 /target/
 /build/
 .vscode/
 .cache/
+_deps/

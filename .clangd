@@ -1,0 +1,19 @@
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+  ClangTidy:
+    FastCheckFilter: Loose
+
+CompileFlags:
+  Remove: [-fmodules-ts, -fdeps-format=*, -fmodule-mapper=*]
+
+InlayHints:
+  Enabled: No
+  ParameterNames: No
+  DeducedTypes: Yes
+
+---
+If:
+  PathMatch: libs/.*
+Diagnostics:
+  Suppress: "*"
