@@ -10,7 +10,6 @@
 #include <fstream>
 #include <algorithm>
 #include <chrono>
-#include <atomic>
 #include <mutex>
 #if __cpp_lib_semaphore >= 201907L
 #include <semaphore>
@@ -22,8 +21,8 @@
 #include "../libs/doboz/Compressor.h"
 #include "../libs/doboz/Decompressor.h"
 
-namespace dscstools {
-	namespace mdb1 {
+
+	namespace dscstools::mdb1 {
 		constexpr auto MDB1_MAGIC_VALUE = 0x3142444D;
 		constexpr auto MDB1_CRYPTED_MAGIC_VALUE = 0x608D920C;
 
@@ -49,7 +48,7 @@ namespace dscstools {
 				else
 					active = 0; // Just in case
 			}
-			std::chrono::nanoseconds duration() const {
+			[[nodiscard]] std::chrono::nanoseconds duration() const {
 				return elapsed;
 			}
 			void reset() {
@@ -375,6 +374,12 @@ namespace dscstools {
 			if (info.status == dscstools::mdb1::invalid) {
 				throw std::runtime_error("Not a valid MDB1 file");
 			}
+
+			if (!std::filesystem::exists(target)) {
+				std::filesystem::create_directories(target);
+			}else if (!std::filesystem::is_directory(target))
+				throw std::invalid_argument("Error: target path is not a directory.");
+
 			MappedFile archiveMap = mmap_readonly(source);
 
 			std::vector<Job> jobs;
@@ -383,41 +388,40 @@ namespace dscstools {
 				if (fi.file.compareBit == 0xFFFF || fi.file.dataId == 0xFFFF) continue;
 				std::filesystem::path outPath = target / fi.name.toPath();
 				jobs.push_back({ fi, outPath });
-				if(!outPath.has_parent_path())
+				if(!std::filesystem::exists(outPath.parent_path()))
 					std::filesystem::create_directories(outPath.parent_path());
 			}
 
-			//const unsigned cores = std::max(1u, std::thread::hardware_concurrency());
-			const unsigned cores = 1u;
+			const unsigned cores = std::max(1u, std::thread::hardware_concurrency());
 			
-			/*boost::asio::thread_pool pool(cores);
+			boost::asio::thread_pool pool(cores);
 
 			#if __cpp_lib_semaphore >= 201907L
 				std::cout << "***USING SEMAPHORES***" << std::endl;
-				const unsigned io_slots = std::min(4u, std::max(1u, cores-1));
+				const unsigned io_slots = std::min(8u, std::max(1u, cores/2));
 				std::counting_semaphore<> write_slots(io_slots);
-			#endif*/
+			#endif
 
 			for (const auto& job : jobs) {
-				//boost::asio::post(pool, [&, job] {
-					//const std::string searchStr = "images\\tutorial75";
-					//if (fn != searchStr) {
-					//	continue;
-					//}
-					const auto fn = job.fileInfo.name.toString();
-					const auto& data = job.fileInfo.data;
-					const uint64_t offset =
-						static_cast<uint64_t>(info.dataStart) + data.offset;
+				boost::asio::post(pool, [&, job] {
+						const auto fn = job.fileInfo.name.toString();
+						const auto& data = job.fileInfo.data;
+						const uint64_t offset =
+							static_cast<uint64_t>(info.dataStart) + data.offset;
 
-					if (offset + data.compSize > archiveMap.size) {
-						throw std::runtime_error("Range exceeds mapped file size");
-					}
-					const uint8_t* archiveFilePtr = archiveMap.ptr + offset;
+						if (offset + data.compSize > archiveMap.size) {
+							throw std::runtime_error("Range exceeds mapped file size");
+						}
+						const uint8_t* archiveFilePtr = archiveMap.ptr + offset;
 
 					thread_local doboz::Decompressor decomp;
+					thread_local std::vector<char> comp_buf;
+					thread_local std::vector<char> plain_buf;
+					thread_local std::vector<char> chunk_buf(8u << 20); // 8 MiB
+					thread_local std::vector<char> io_buf(8u << 20);    // 8 MiB stream buffer
 
-					const bool needsDecomp =
-						(data.compSize != data.size) && decompress;
+						const bool needsDecomp =
+							(data.compSize != data.size) && decompress;
 
 					//if (!needsDecomp) {
 
@@ -428,16 +432,12 @@ namespace dscstools {
 
 					//	continue;
 
-					//	// Stream XOR -> write
-					//	std::ofstream out(job.outPath, std::ios::binary);
+						if (!needsDecomp) {
 
-					//	std::vector<char> chunk(1 << 20); 
-					//	uint64_t remain = decompress ? data.size : data.compSize;
-					//	uint64_t pos = 0;
+							// Stream XOR -> write
 
-					//	#if __cpp_lib_semaphore >= 201907L
-					//		//write_slots.acquire();
-					//	#endif
+							uint64_t remain = decompress ? data.size : data.compSize;
+							uint64_t pos = 0;
 
 					//	while (remain) {
 					//		const size_t chunkSize = static_cast<size_t>(
@@ -460,45 +460,70 @@ namespace dscstools {
 					//	continue;
 					//}
 					//continue;
+							#if __cpp_lib_semaphore >= 201907L
+								write_slots.acquire();
+							#endif
 
+							{
+								std::ofstream out(job.outPath, std::ios::binary);
+								out.rdbuf()->pubsetbuf(io_buf.data(), static_cast<std::streamsize>(io_buf.size()));
 
-					std::ofstream out(job.outPath, std::ios::binary);
+								while (remain) {
+									const size_t chunkSize = static_cast<size_t>(
+										std::min<uint64_t>(remain, chunk_buf.size()));
+									fast_xor_cipher::xor_into(archiveFilePtr + pos, chunk_buf.data(), chunkSize, offset + pos);
+									out.write(chunk_buf.data(), static_cast<std::streamsize>(chunkSize));
+									pos += chunkSize;
+									remain -= chunkSize;
+								}
 
-					// Compressed: XOR comp -> decompress -> write
-					std::unique_ptr<char[]> comp(new char[data.compSize]);
-					fast_xor_cipher::xor_into(archiveFilePtr, comp.get(), data.compSize, offset);
+								if (out.bad()) {
+									throw std::runtime_error("Write failed: " +
+										job.outPath.string());
+								}
+							}
 
-					if (!needsDecomp) 
-						out.write(comp.get(), data.compSize);
-					else 
-					{
-						std::unique_ptr<char[]> plain(new char[data.size]);
-						auto res = decomp.decompress(comp.get(),
+							#if __cpp_lib_semaphore >= 201907L
+								write_slots.release();
+							#endif
+							return;
+						}
+
+						// Compressed: XOR comp -> decompress -> write
+						if(comp_buf.size() < data.compSize)
+							comp_buf.resize(data.compSize);
+						if (plain_buf.size() < data.size)
+							plain_buf.resize(data.size);
+						fast_xor_cipher::xor_into(archiveFilePtr, comp_buf.data(), data.compSize, offset);
+
+						auto res = decomp.decompress(comp_buf.data(),
 							data.compSize,
-							plain.get(),
+							plain_buf.data(),
 							data.size);
 						if (res != doboz::RESULT_OK) {
 							throw std::runtime_error("Doboz error: " + std::to_string(res));
 						}
 
 						#if __cpp_lib_semaphore >= 201907L
-						//write_slots.acquire();
+						write_slots.acquire();
 						#endif
-						out.write(plain.get(), data.size);
-					}
+						{
+							std::ofstream out(job.outPath, std::ios::binary);
+							out.rdbuf()->pubsetbuf(io_buf.data(), static_cast<std::streamsize>(io_buf.size()));
+							out.write(plain_buf.data(), static_cast<std::streamsize>(data.size));
 
-					out.flush();
-					out.close();
-					if (!out.good()) {
-						throw std::runtime_error("Write failed: " +
-							job.outPath.string());
-					}
-					#if __cpp_lib_semaphore >= 201907L
-					//write_slots.release();
-					#endif
-					//});
+							if (out.bad()) {
+								throw std::runtime_error("Write failed: " +
+									job.outPath.string());
+							}
+						}
+
+						#if __cpp_lib_semaphore >= 201907L
+						write_slots.release();
+						#endif
+				});
 			}
-			//pool.join();
+			pool.join();
 		}
 
 		void extractMDB1_MMAP_single(const std::filesystem::path source, const std::filesystem::path target, bool decompress) {
@@ -564,14 +589,8 @@ namespace dscstools {
 			std::vector<char> chunk(1 << 20); // 1 MB for streaming copies
 			doboz::Decompressor decomp;
 
-			int i = 0;
-
 			for (FileInfo& file : files) {
-				const auto fn = std::string(file.name.name);
-				const std::string searchStr = "images\\tutorial75";
-				if(fn != searchStr) {
-					continue;
-				}
+
 				preextractionTracker.begin();
 				const DataEntry& data = file.data;
 				const uint64_t offset = static_cast<uint64_t>(info.dataStart) + data.offset; // Find absolute offset for file
