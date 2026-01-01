@@ -22,6 +22,7 @@
 #include <map>
 #include <ostream>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -392,6 +393,8 @@ namespace mvgltools::mdb1
 
         auto header = read<typename MDB::Header>(input);
 
+        if (header.magicValue != MDB1_MAGIC_VALUE) throw std::runtime_error("Given file is not a MVGL archive!");
+
         dataStart = header.dataStart;
 
         assert(header.fileEntryCount == header.fileNameCount);
@@ -471,7 +474,7 @@ namespace mvgltools::mdb1
             return std::unexpected("Output path already exists and isn't a file.");
         if (output.has_parent_path()) std::filesystem::create_directories(output.parent_path());
 
-        typename MDB::OutputStream outputStream(output, std::ios::out | std::ios::binary);
+        std::ofstream outputStream(output, std::ios::out | std::ios::binary);
         outputStream.write(result.value().data(), result.value().size());
         return {};
     }

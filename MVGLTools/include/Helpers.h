@@ -31,31 +31,34 @@ namespace mvgltools
         std::cout << str << '\n';
     }
 
-    template<typename T>
-    inline auto read(std::ifstream& stream) -> T
+    template<typename T, typename Stream>
+    inline auto read(Stream& stream) -> T
     {
         T data;
         stream.read(reinterpret_cast<char*>(&data), sizeof(T));
         return data;
     }
 
-    template<typename T>
-    inline void write(std::ofstream& stream, const T& data)
+    template<typename T, typename Stream>
+    inline void write(Stream& stream, const T& data)
     {
         stream.write(reinterpret_cast<const char*>(&data), sizeof(T));
     }
 
-    template<>
-    inline void write(std::ofstream& stream, const std::vector<char>& data)
+    template<typename Stream>
+    inline void write(Stream& stream, const std::vector<char>& data)
     {
         stream.write(data.data(), static_cast<std::streamsize>(data.size()));
     }
 
-    inline void write(std::ofstream& stream, const void* data, std::streamsize size)
+    template<typename Stream>
+    inline void write(Stream& stream, const void* data, std::streamsize size)
     {
         stream.write(reinterpret_cast<const char*>(data), size);
     }
-    inline void write(std::ofstream& stream, const std::string& data, std::streamsize size)
+
+    template<typename Stream>
+    inline void write(Stream& stream, const std::string& data, std::streamsize size)
     {
         std::vector<char> copy(size);
         std::ranges::copy(data, copy.begin());

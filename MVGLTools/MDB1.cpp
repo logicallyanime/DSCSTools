@@ -26,6 +26,7 @@ namespace
     {
         const uint64_t byte = pos >> 3;
         const uint64_t bit  = pos & 7;
+        if (name.size() <= byte) return false;
         return ((name[byte] >> bit) & 1) != 0; // NOLINT(hicpp-signed-bitwise)
     }
 
