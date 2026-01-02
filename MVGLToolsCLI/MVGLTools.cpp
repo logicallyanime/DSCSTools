@@ -640,8 +640,8 @@ auto main(int argc, char** argv) -> int
     namespace po = boost::program_options;
     po::variables_map vm;
     po::positional_options_description pos;
-    po::options_description desc("MVGLTools v2.0.2 by SydMontague | https://github.com/SydMontague/MVGLTools/\n"
-                                 "Usage: MVGLToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]",
+    po::options_description desc(std::format("{} {} by SydMontague | https://github.com/SydMontague/MVGLTools/\n"
+                                 "Usage: MVGLToolsCLI --game=<game> --mode=<mode> <source> <target> [mode options]", PROJECT_NAME, PROJECT_VERSION),
                                  120);
 
     auto base_options = desc.add_options();

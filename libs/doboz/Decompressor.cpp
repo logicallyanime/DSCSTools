@@ -65,7 +65,7 @@ Result Decompressor::decompress(const void* source, size_t sourceSize, void* des
 	// If the data is simply stored, copy it to the destination buffer and we're done
 	if (header.isStored)
 	{
-		memcpy(outputBuffer, inputIterator, uncompressedSize);
+		std::memcpy(outputBuffer, inputIterator, uncompressedSize);
 		return RESULT_OK;
 	}
 
@@ -288,8 +288,8 @@ Result Decompressor::decodeHeader(Header& header, const void* source, size_t sou
 	header.uncompressedSize = 0;
 
 	// Decode the uncompressed and compressed sizes
-	memcpy(&header.uncompressedSize, inputIterator, sizeCodedSize);
-	memcpy(&header.compressedSize, inputIterator + sizeCodedSize, sizeCodedSize);
+	std::memcpy(&header.uncompressedSize, inputIterator, sizeCodedSize);
+	std::memcpy(&header.compressedSize, inputIterator + sizeCodedSize, sizeCodedSize);
 
 	if(sizeCodedSize > 8)
 	{

@@ -208,7 +208,7 @@ Result Compressor::store(const void* source, size_t sourceSize, void* destinatio
 	outputIterator += headerSize;
 
 	// Store the data
-	memcpy(outputIterator, source, sourceSize);
+	std::memcpy(outputIterator, source, sourceSize);
 
 	return RESULT_OK;
 }

@@ -23,9 +23,9 @@ namespace mvgltools
         auto result1 = decomp.getCompressionInfo(input.data(), input.size(), info);
 
         if (result1 != doboz::RESULT_OK) return input;
-        if (info.compressedSize != input.size()) return input;
         if (info.version != 0) return input;
         if (info.uncompressedSize != size) return input;
+        if (info.compressedSize > input.size()) return std::unexpected("Error: doboz input buffer too small.");
 
         std::vector<char> output(info.uncompressedSize);
 
@@ -61,7 +61,7 @@ namespace mvgltools
         auto result = decomp.getCompressionInfo(input.data(), input.size(), info);
 
         if (result != doboz::RESULT_OK) return false;
-        if (info.version == 0) return false;
+        if (info.version != 0) return false;
         if (info.compressedSize != input.size()) return false;
 
         return true;

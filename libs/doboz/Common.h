@@ -78,7 +78,7 @@ const int TRAILING_DUMMY_SIZE = WORD_SIZE; // safety trailing bytes which decrea
 DOBOZ_FORCEINLINE uint32_t fastRead(const void*  source, size_t size)
 {
 	assert(size <= WORD_SIZE);
-	uint32_t val;
+	uint32_t val = 0;
 	std::memcpy(&val, source, size);
 	return val;
 }

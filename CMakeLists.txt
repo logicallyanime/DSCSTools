@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.28)
 
 project("MVGLTools"
-  VERSION 2.0.2
+  VERSION 2.0.3
   DESCRIPTION "Tools for game using the Media.Vision engine (e.g. Digimon Story)"
   HOMEPAGE_URL "https://github.com/SydMontague/MVGLTools")
 

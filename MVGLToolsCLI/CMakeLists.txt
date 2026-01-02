@@ -4,6 +4,8 @@ add_executable(MVGLToolsCLI)
 target_sources(MVGLToolsCLI PRIVATE MVGLTools.cpp)
 target_compile_features(MVGLToolsCLI PUBLIC cxx_std_23)
 target_link_libraries(MVGLToolsCLI PRIVATE MVGLTools Boost::program_options)
+target_compile_definitions(MVGLToolsCLI PRIVATE PROJECT_NAME="${PROJECT_NAME}")
+target_compile_definitions(MVGLToolsCLI PRIVATE PROJECT_VERSION="v${PROJECT_VERSION}")
 
 # Install
 install(TARGETS MVGLToolsCLI RUNTIME DESTINATION .)
