@@ -284,31 +284,15 @@ Result Decompressor::decodeHeader(Header& header, const void* source, size_t sou
 	}
 
 	header.isStored = (attributes & 128) != 0;
+	header.compressedSize = 0;
+	header.uncompressedSize = 0;
 
 	// Decode the uncompressed and compressed sizes
-	switch (sizeCodedSize)
+	memcpy(&header.uncompressedSize, inputIterator, sizeCodedSize);
+	memcpy(&header.compressedSize, inputIterator + sizeCodedSize, sizeCodedSize);
+
+	if(sizeCodedSize > 8)
 	{
-	case 1:
-		header.uncompressedSize = *reinterpret_cast<const uint8_t*>(inputIterator);
-		header.compressedSize = *reinterpret_cast<const uint8_t*>(inputIterator + sizeCodedSize);
-		break;
-
-	case 2:
-		header.uncompressedSize = *reinterpret_cast<const uint16_t*>(inputIterator);
-		header.compressedSize = *reinterpret_cast<const uint16_t*>(inputIterator + sizeCodedSize);
-		break;
-
-	case 4:
-		header.uncompressedSize = *reinterpret_cast<const uint32_t*>(inputIterator);
-		header.compressedSize = *reinterpret_cast<const uint32_t*>(inputIterator + sizeCodedSize);
-		break;
-
-	case 8:
-		header.uncompressedSize = *reinterpret_cast<const uint64_t*>(inputIterator);
-		header.compressedSize = *reinterpret_cast<const uint64_t*>(inputIterator + sizeCodedSize);
-		break;
-
-	default:
 		return RESULT_ERROR_CORRUPTED_DATA;
 	}
 

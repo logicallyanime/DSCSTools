@@ -22,6 +22,7 @@
 #include <climits>
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 
 #if defined(_MSC_VER)
 #define DOBOZ_FORCEINLINE __forceinline
@@ -74,27 +75,12 @@ const int TRAILING_DUMMY_SIZE = WORD_SIZE; // safety trailing bytes which decrea
 
 // Reads up to 4 bytes and returns them in a word
 // WARNING: May read more bytes than requested!
-DOBOZ_FORCEINLINE uint32_t fastRead(const void* source, size_t size)
+DOBOZ_FORCEINLINE uint32_t fastRead(const void*  source, size_t size)
 {
 	assert(size <= WORD_SIZE);
-
-	switch (size)
-	{
-	case 4:
-		return *reinterpret_cast<const uint32_t*>(source);
-
-	case 3:
-		return *reinterpret_cast<const uint32_t*>(source);
-
-	case 2:
-		return *reinterpret_cast<const uint16_t*>(source);
-
-	case 1:
-		return *reinterpret_cast<const uint8_t*>(source);
-
-	default:
-		return 0; // dummy
-	}
+	uint32_t val;
+	std::memcpy(&val, source, size);
+	return val;
 }
 
 // Writes up to 4 bytes specified in a word
@@ -102,25 +88,7 @@ DOBOZ_FORCEINLINE uint32_t fastRead(const void* source, size_t size)
 DOBOZ_FORCEINLINE void fastWrite(void* destination, uint32_t word, size_t size)
 {
 	assert(size <= WORD_SIZE);
-
-	switch (size)
-	{
-	case 4:
-		*reinterpret_cast<uint32_t*>(destination) = word;
-		break;
-
-	case 3:
-		*reinterpret_cast<uint32_t*>(destination) = word;
-		break;
-
-	case 2:
-		*reinterpret_cast<uint16_t*>(destination) = static_cast<uint16_t>(word);
-		break;
-
-	case 1:
-		*reinterpret_cast<uint8_t*>(destination) = static_cast<uint8_t>(word);
-		break;
-	}
+	std::memcpy(destination, &word, size);
 }
 
 } // namespace detail

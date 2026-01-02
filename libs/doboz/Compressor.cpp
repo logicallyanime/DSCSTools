@@ -327,28 +327,8 @@ void Compressor::encodeHeader(const Header& header, uint64_t maxCompressedSize, 
 	*outputIterator++ = static_cast<uint8_t>(attributes);
 
 	// Encode the uncompressed and compressed sizes
-	switch (sizeCodedSize)
-	{
-	case 1:
-		*reinterpret_cast<uint8_t*>(outputIterator) = static_cast<uint8_t>(header.uncompressedSize);
-		*reinterpret_cast<uint8_t*>(outputIterator + sizeCodedSize) = static_cast<uint8_t>(header.compressedSize);
-		break;
-
-	case 2:
-		*reinterpret_cast<uint16_t*>(outputIterator) = static_cast<uint16_t>(header.uncompressedSize);
-		*reinterpret_cast<uint16_t*>(outputIterator + sizeCodedSize) = static_cast<uint16_t>(header.compressedSize);
-		break;
-
-	case 4:
-		*reinterpret_cast<uint32_t*>(outputIterator) = static_cast<uint32_t>(header.uncompressedSize);
-		*reinterpret_cast<uint32_t*>(outputIterator + sizeCodedSize) = static_cast<uint32_t>(header.compressedSize);
-		break;
-
-	case 8:
-		*reinterpret_cast<uint64_t*>(outputIterator) = header.uncompressedSize;;
-		*reinterpret_cast<uint64_t*>(outputIterator + sizeCodedSize) = header.compressedSize;
-		break;
-	}
+	std::memcpy(outputIterator, &header.uncompressedSize, sizeCodedSize);
+	std::memcpy(outputIterator + sizeCodedSize, &header.compressedSize, sizeCodedSize);
 }
 
 uint64_t Compressor::getMaxCompressedSize(uint64_t size)
