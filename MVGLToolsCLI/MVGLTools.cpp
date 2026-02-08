@@ -244,7 +244,7 @@ namespace
             if (mvgltools::file_equivalent(source, target))
                 return std::unexpected("Input and output file must be different.");
 
-            mvgltools::mdb1::DSCS::InputStream input(source, std::ios::binary | std::ios::in);
+            std::ifstream input(source, std::ios::binary | std::ios::in);
             mvgltools::mdb1::DSCS::OutputStream output(target, std::ios::binary | std::ios::out);
 
             std::streamsize offset = 0;
